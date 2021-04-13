@@ -67,3 +67,8 @@ rttov121: simulator
   - $ML_RTTOV   make
   - $ML_RTTOV ./ml_rttov
 
+4. Dataset availables in Mistral:
+ - cd /work/bb1036/b381362/dataset_old/test-2.nc
+ - cd cd /work/bb1036/b381362/dataset (My dataset)
+ -
+
