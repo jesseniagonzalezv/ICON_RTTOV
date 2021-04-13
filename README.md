@@ -4,6 +4,7 @@
 ML_RTTOV: to adapt the dataset and call rttov121
 
 rttov121: simulator
+ -Download rttov121 https://nwp-saf.eumetsat.int/site/login/?redirect_to=https%3A%2F%2Fnwp-saf.eumetsat.int%2Fsite%2Fuser%2F
 
 ----------
 ::MISTRAL
