@@ -2,6 +2,7 @@
 
 
 ML_RTTOV: to adapt the dataset and call rttov121
+
 rttov121: simulator
 
 ----------
@@ -38,6 +39,7 @@ rttov121: simulator
       - LDFLAGS_NETCDF = -L$(NETCDF_PREFIX)/lib -lnetcdff
   
   - ../build/rttov_compile.sh
+  
    │ Compiling with flags    : ifort
    │ Compiling in directory  : ../../../../scripts/tools/RTTOV/rttov121-new
    RTTOV features available:
@@ -52,15 +54,15 @@ rttov121: simulator
     - y
     
 2.2. emis_data
-    - Dowloaded UW IR atlas data – this includes the angular correction data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
-    - The file should be unzipped in the folder of emis_data/ (rttov121/emis_data)
+  - Dowloaded UW IR atlas data – this includes the angular correction data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
+  - The file should be unzipped in the folder of emis_data/ (rttov121/emis_data)
 
 2.3. BRF_data
-    - BRDF atlas files (unchanged since v11.3)/ BRDF atlas data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
-    - The  file should be unzipped in the folder of brdf_data/ (rttov121/brdf_data)
+  - BRDF atlas files (unchanged since v11.3)/ BRDF atlas data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
+  - The  file should be unzipped in the folder of brdf_data/ (rttov121/brdf_data)
 
 3. Compile ML_RTTOV
-   - module load intel
-   - $ML_RTTOV   make
-   - $ML_RTTOV ./ml_rttov
+  - module load intel
+  - $ML_RTTOV   make
+  - $ML_RTTOV ./ml_rttov
 
