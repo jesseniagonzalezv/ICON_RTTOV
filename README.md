@@ -40,14 +40,14 @@ rttov121: simulator
   
   - ../build/rttov_compile.sh
   
-   │ Compiling with flags    : ifort
-   │ Compiling in directory  : ../../../../scripts/tools/RTTOV/rttov121-new
-   RTTOV features available:
-   HDF5 coefficient I/O    : y
-   Emissivity/BRDF atlases : y
-   C/C++ wrapper           : y
-   Python wrapper          : n *change to y
-   RTTOV GUI               : n *change to y 
+        ├── Compiling with flags    : ifort
+        ├── Compiling in directory  : ../../../../scripts/tools/RTTOV/rttov121-new
+        ├──    RTTOV features available:
+        ├──    HDF5 coefficient I/O    : y
+        ├──    Emissivity/BRDF atlases : y
+        ├──    C/C++ wrapper           : y
+        ├──    Python wrapper          : n *change to y
+        ├──    RTTOV GUI               : n *change to y 
      
 2.1. Dowload coeff rttov:
   - rttov121/rtcoef_rttov12/rttov_coef_download.sh
