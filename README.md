@@ -53,9 +53,9 @@ rttov121: simulator
   
   - ../build/rttov_compile.sh
       - Specify required compiler flag file (leave blank for default: gfortran)
-        -  > ifort
+       -  > ifort
       - Specify installation directory relative to top-level RTTOV directory (leave blank for default: ./)
-        - > ../../../../scripts/tools/RTTOV/rttov121-new
+       - > ../../../../scripts/tools/RTTOV/rttov121-new
   
         ├── Compiling with flags    : ifort
         ├── Compiling in directory  : ../../../../scripts/tools/RTTOV/rttov121-new
