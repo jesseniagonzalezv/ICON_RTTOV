@@ -50,8 +50,10 @@ rttov121: simulator
       - NETCDF_PREFIX  = /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14
       - FFLAGS_NETCDF  = -D_RTTOV_NETCDF -I$(NETCDF_PREFIX)/include
       - LDFLAGS_NETCDF = -L$(NETCDF_PREFIX)/lib -lnetcdff
+  ```
   $ cd src
   $../build/rttov_compile.sh
+  ```
       - Specify required compiler flag file (leave blank for default: gfortran)
        -  > ifort
       - Specify installation directory relative to top-level RTTOV directory (leave blank for default: ./)
@@ -70,8 +72,11 @@ rttov121: simulator
     
 3. Compile ML_RTTOV
   - module load intel
+  ```
   $ ML_RTTOV   make
   $ ML_RTTOV ./ml_rttov
+  ```
+
 
 4. Dataset availables in Mistral:
  - cd /work/bb1036/b381362/dataset_old/test-2.nc
