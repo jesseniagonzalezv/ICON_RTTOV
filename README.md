@@ -32,9 +32,10 @@ rttov121: simulator
 
 
 1.1. Dowload coeff rttov:
-  - rttov121/rtcoef_rttov12/rttov_coef_download.sh
+```
+  $ rttov121/rtcoef_rttov12/rttov_coef_download.sh
     - y
-    
+```    
 1.2. emis_data
   - Dowloaded UW IR atlas data – this includes the angular correction data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
   - The file should be unzipped in the folder of emis_data/ (rttov121/emis_data)
@@ -52,7 +53,7 @@ rttov121: simulator
       - LDFLAGS_NETCDF = -L$(NETCDF_PREFIX)/lib -lnetcdff
   ```
   $ cd src
-  $../build/rttov_compile.sh
+  $ ../build/rttov_compile.sh
   ```
       - Specify required compiler flag file (leave blank for default: gfortran)
        -  > ifort
@@ -79,7 +80,10 @@ rttov121: simulator
 
 
 4. Dataset availables in Mistral:
- - cd /work/bb1036/b381362/dataset_old/test-2.nc
- - cd cd /work/bb1036/b381362/dataset (My dataset)
+```
+ $ cd /work/bb1036/b381362/dataset_old/test-2.nc
+ $ cd cd /work/bb1036/b381362/dataset (My dataset)
+ ```
+
  
 
