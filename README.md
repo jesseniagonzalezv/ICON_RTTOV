@@ -19,11 +19,11 @@ rttov121: simulator
         │      ├── data
         │            ├── tools
         │                   ├── RTTOV
-        │                         ├── rttov121 ****Main folder RTTOV simulator (check steps 2.)
+        │                         ├── rttov121 ****Main folder RTTOV simulator (steps 2. compilation)
         │      ├── scripts
         │            ├── tools
         │                   ├── RTTOV
-        │                         ├── rttov121-new (files generated when run ML_RTTOV(makefile))
+        │                         ├── rttov121-new (files generated)
         │                                    └── obj
         │                                    └── mod
         │                                    └── lib
@@ -31,6 +31,18 @@ rttov121: simulator
         │                                    └── bin
 
 
+1.1. Dowload coeff rttov:
+  - rttov121/rtcoef_rttov12/rttov_coef_download.sh
+    - y
+    
+1.2. emis_data
+  - Dowloaded UW IR atlas data – this includes the angular correction data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
+  - The file should be unzipped in the folder of emis_data/ (rttov121/emis_data)
+
+1.3. BRF_data
+  - BRDF atlas files (unchanged since v11.3)/ BRDF atlas data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
+  - The  file should be unzipped in the folder of brdf_data/ (rttov121/brdf_data)
+   
 2. Compile RTTOV (rttov121)
   -  Change paths on the build/Makefile.local
       - HDF5_PREFIX  = /sw/rhel6-x64/hdf5/hdf5-1.8.14-intel14 
@@ -50,18 +62,8 @@ rttov121: simulator
         ├──    Python wrapper          : n *change to y
         ├──    RTTOV GUI               : n *change to y 
      
-2.1. Dowload coeff rttov:
-  - rttov121/rtcoef_rttov12/rttov_coef_download.sh
-    - y
+
     
-2.2. emis_data
-  - Dowloaded UW IR atlas data – this includes the angular correction data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
-  - The file should be unzipped in the folder of emis_data/ (rttov121/emis_data)
-
-2.3. BRF_data
-  - BRDF atlas files (unchanged since v11.3)/ BRDF atlas data ([https://nwp-saf.eumetsat.int/site/software/rttov/download/](https://nwp-saf.eumetsat.int/site/software/rttov/download/))
-  - The  file should be unzipped in the folder of brdf_data/ (rttov121/brdf_data)
-
 3. Compile ML_RTTOV
   - module load intel
   - $ML_RTTOV   make
