@@ -67,9 +67,13 @@ rttov121: simulator
         ├──    Emissivity/BRDF atlases : y
         ├──    C/C++ wrapper           : y
         ├──    Python wrapper          : n *change to y
-        ├──    RTTOV GUI               : n *change to y 
-     
-
+        ├──    RTTOV GUI               : n *change to y
+  - Verifying the RTTOV
+  ```
+  $RTTOV/rttov_test ./test_rttov12.sh ARCH=myarch [BIN=bindir]
+  $RTTOV/bin ./rttov_test.pl ARCH=myarch [BIN=bindir] TEST_LIST=hirs/001,avhrr/001 DIRECT=1
+  $RTTOV/rttov_test ./run_example_fwd.sh ARCH=myarch [BIN=bindir]
+  ```
     
 3. Compile ML_RTTOV
   - module load intel
