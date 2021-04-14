@@ -23,7 +23,7 @@ rttov121: simulator
         │      ├── scripts
         │            ├── tools
         │                   ├── RTTOV
-        │                         ├── rttov121-new (files generated when run rttov121)
+        │                         ├── rttov121-new (files generated when run ML_RTTOV(makefile))
         │                                    └── obj
         │                                    └── mod
         │                                    └── lib
