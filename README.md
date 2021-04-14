@@ -74,6 +74,12 @@ rttov121: simulator
   $RTTOV/bin ./rttov_test.pl ARCH=myarch [BIN=bindir] TEST_LIST=hirs/001,avhrr/001 DIRECT=1
   $RTTOV/rttov_test ./run_example_fwd.sh ARCH=myarch [BIN=bindir]
   ```
+  The ARCH parameter should match the one used when you compiled RTTOV. The BIN parameter is optional
+(indicated by the square brackets []). It is only required if the INSTALLDIR parameter was supplied when compiling
+RTTOV i.e. if the location of bin/ is not in the top-level RTTOV directory. If specified BIN must give the location of
+the directory containing binary executables relative to the top-level RTTOV distribution directory (e.g. if you specified
+INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/gfortran/bin).
+  
     
 3. Compile ML_RTTOV
   - module load intel
