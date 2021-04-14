@@ -19,11 +19,11 @@ rttov121: simulator
         │      ├── data
         │            ├── tools
         │                   ├── RTTOV
-        │                         ├── rttov121 ****Main folder RTTOV simulator (steps 2. compilation)
+        │                         ├── rttov121 ****Main folder RTTOV simulator **create all these folder (script/tools/RTTOV/rttov121-new) %too long %%
         │      ├── scripts
         │            ├── tools
         │                   ├── RTTOV
-        │                         ├── rttov121-new (files generated)
+        │                         ├── rttov121-new (files generated) **create all these folder (script/tools/RTTOV/rttov121-new)
         │                                    └── obj
         │                                    └── mod
         │                                    └── lib
