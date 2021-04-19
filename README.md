@@ -91,7 +91,7 @@ INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/
 
 4. Dataset availables in Mistral:
 ```
- $ cd /work/bb1036/b381362/dataset_old/test-2.nc
+ $ cd /work/bb1036/b381362/dataset/test-2.nc
  $ cd cd /work/bb1036/b381362/dataset (My dataset)
  ```
 
