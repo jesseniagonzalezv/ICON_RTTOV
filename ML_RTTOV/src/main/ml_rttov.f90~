@@ -18,7 +18,7 @@ PROGRAM ML_RTTOV
 
   ! Parameters (for now)
   CHARACTER(LEN=256), PARAMETER :: &
-       fname_in= "/work/bb1036/b381362/dataset/subset_rttov_T12.nc" , & !"/work/bb1036/b381362/dataset/test-rttov.nc"
+       fname_in= "/work/bb1036/b381362/dataset/test-rttov.nc" , & !"/work/bb1036/b381362/dataset/test-rttov.nc"
        fname_out= "/work/bb1036/b381362/output/output-test.nc" !"/pf/b/b38162/output-test-rttov.nc.nc"
   INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints=10738, npoints_it=2000 !5369 375193
   LOGICAL, PARAMETER :: flag_ret = .FALSE.
