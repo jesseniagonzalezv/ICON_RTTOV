@@ -104,7 +104,8 @@ CONTAINS
           call ml_error(routine_name,errmsg)
        endif
 
-       if ((trim(dimname(idim)).eq.'level').and.(nlevels > dimsize(idim))) then
+       !if ((trim(dimname(idim)).eq.'level').and.(nlevels > dimsize(idim))) then
+       if ((trim(dimname(idim)).eq.'height').and.(nlevels > dimsize(idim))) then
           errmsg='Number of levels selected is greater than in input file '//trim(fname)
           call ml_error(routine_name,errmsg)
        endif
@@ -233,8 +234,9 @@ CONTAINS
        endif
        
        ! Map to the right input argument
+       WRITE(*,*) trim(vname)
        select case (trim(vname))
-       case ('pfull')
+       case ('pres') !case ('pfull')
           if (Lpoint) then
              icon%p(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
@@ -246,25 +248,25 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=ph)
           endif
-       case ('height')
+       case ('z_mc')!case ('height')
           if (Lpoint) then
              icon%zlev(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%zlev)
           endif
-       case ('height_half')
+       case ('z_ifc')!case ('height_half')
           if (Lpoint) then
              zh(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=zh)
           endif
-       case ('T_abs')
+       case ('ta')!case ('T_abs')
           if (Lpoint) then
              icon%T(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%T)
           endif
-       case ('qv')
+       case ('hus')!case ('qv')
           if (Lpoint) then
              icon%sh(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
@@ -276,7 +278,7 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%rh)
           endif
-       case ('tca')
+       case ('clc')!case ('tca')
           if (Lpoint) then
              icon%tca(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
@@ -288,13 +290,13 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%cca)
           endif
-       case ('mr_lsliq')
+       case ('clw')!case ('mr_lsliq')
           if (Lpoint) then
              icon%mr_lsliq(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%mr_lsliq)
           endif
-       case ('mr_lsice')
+       case ('cli')!case ('mr_lsice')
           if (Lpoint) then
              icon%mr_lsice(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
@@ -312,13 +314,13 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%mr_ccice)
           endif
-       case ('fl_lsrain')
+       case ('qr')!case ('fl_lsrain')
           if (Lpoint) then
              icon%fl_lsrain(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%fl_lsrain)
           endif
-       case ('fl_lssnow')
+       case ('qs')!case ('fl_lssnow')
           if (Lpoint) then
              icon%fl_lssnow(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
@@ -372,43 +374,43 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x4=x4,y3=icon%Reff)
           endif
-       case ('skt')
+       case ('ts')!case ('skt')
           if (Lpoint) then
              icon%skt(1:npoints) = x1(1:npoints)
           else
              call map_ll_to_point(Na,Nb,npoints,x2=x2,y1=icon%skt)
           endif
-       case ('psfc')
+       case ('ps')!case ('psfc')
           if (Lpoint) then
              icon%skt(1:npoints) = x1(1:npoints)
           else
              call map_ll_to_point(Na,Nb,npoints,x2=x2,y1=icon%psfc)
           endif
-       case ('orography')
+       case ('topography_c')!case ('orography')
           if (Lpoint) then
              icon%orography(1:npoints) = x1(1:npoints)
           else
              call map_ll_to_point(Na,Nb,npoints,x2=x2,y1=icon%orography)
           endif
-       case ('landmask')
+       case ('FR_LAND')!case ('landmask')
           if (Lpoint) then
              icon%landmask(1:npoints) = x1(1:npoints)
           else
              call map_ll_to_point(Na,Nb,npoints,x2=x2,y1=icon%landmask)
           endif
-       case ('mr_ozone')
+       case ('mr_ozone') !!!!FALTA ESTO
           if (Lpoint) then
              icon%mr_ozone(1:npoints,:) = x2(1:npoints,1:nlevels)
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%mr_ozone)
           endif
-       case ('u_wind')
+       case ('u_10m')!case ('u_wind')
           if (Lpoint) then
              icon%u_wind(1:npoints) = x1(1:npoints)
           else
              call map_ll_to_point(Na,Nb,npoints,x2=x2,y1=icon%u_wind)
           endif
-       case ('v_wind')
+       case ('v_10m')!case ('v_wind')
           if (Lpoint) then
              icon%v_wind(1:npoints) = x1(1:npoints)
           else
@@ -491,8 +493,10 @@ CONTAINS
     icon%T_lev(1:npoints,1:nlevels) = icon%T(1:npoints,1:nlevels); icon%T_lev(1:npoints,nlevels+1) = icon%skt(1:npoints)
     icon%p_lev(1:npoints,1:nlevels) = icon%p(1:npoints,1:nlevels); icon%p_lev(1:npoints,nlevels+1) = icon%psfc(1:npoints)
     icon%sh_lev(1:npoints,2:nlevels+1) = icon%sh(1:npoints,1:nlevels); icon%sh_lev(1:npoints,1) = 0._wp
-    icon%mr_ozone_lev(1:npoints,2:nlevels+1) = icon%mr_ozone(1:npoints,1:nlevels); icon%mr_ozone_lev(1:npoints,1) = 0._wp    
+    ! icon%mr_ozone_lev(1:npoints,2:nlevels+1) = icon%mr_ozone(1:npoints,1:nlevels); icon%mr_ozone_lev(1:npoints,1) = 0._wp    
+    icon%mr_ozone_lev(1:npoints,2:nlevels+1) = 0._wp; icon%mr_ozone_lev(1:npoints,1) = 0._wp
     
+
     !! Not sure about units here, taken from COSP, check at some point
     icon%co2 = mr_co2*(amd/amCO2)*1e6
     icon%ch4 = mr_ch4*(amd/amCH4)*1e6  
