@@ -19,17 +19,13 @@ rttov121: simulator
         │      ├── data
         │            ├── tools
         │                   ├── RTTOV
-        │                         ├── rttov121 ****Main folder RTTOV simulator **create all these folders (script/tools/RTTOV/rttov121-new) %too long %%
-        │      ├── scripts
-        │            ├── tools
-        │                   ├── RTTOV
-        │                         ├── rttov121-new (files generated) **create all these folders (script/tools/RTTOV/rttov121-new)
+        │                         ├── rttov121 ****Main folder RTTOV simulator 
+        │                                   (files generated) 
         │                                    └── obj
         │                                    └── mod
         │                                    └── lib
         │                                    └── include
         │                                    └── bin
-
 
 1.1. Dowload coeff rttov:
 ```
