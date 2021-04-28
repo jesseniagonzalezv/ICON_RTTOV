@@ -3,11 +3,14 @@
 prog = ml_rttov
 
 F90      = ifort
-F90FLAGS = -module $(mod) -fpp -qopenmp -O3 #-debug -g -traceback -check bounds
+# F90FLAGS = -module $(mod) -fpp -qopenmp -O3 #-debug -g -traceback -check bounds
+F90FLAGS = -module $(mod) -fpp -qopenmp -O0 -debug -g -traceback -check bounds 
 
 ## Let's start with some paths
 # ---------------------------------------------------------------------------------------------------------------------------------------
-basedir = $(HOME)/github/Retrievals/ML_RTTOV
+main_home=/work/bb1036/b381362
+#basedir = $(HOME)/github/Retrievals/ML_RTTOV
+basedir = $(main_home)/github/Retrievals/ML_RTTOV
 
 src = $(basedir)/src
 obj = $(basedir)/obj
@@ -25,7 +28,8 @@ path_NCDF_LIB = /sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/lib
 
 HDF5_LIB    = /sw/rhel6-x64/hdf5/hdf5-1.8.14-intel14/lib
 
-RTTOV_PATH       = $(HOME)/storage/scripts/tools/RTTOV/rttov121-new
+#RTTOV_PATH       = $(HOME)/storage/RTTOV/rttov121-new
+RTTOV_PATH       = $(main_home)/tools/rttov121
 RTTOV_LIB_PATH   = $(RTTOV_PATH)/lib 
 RTTOV_INC_PATH   = $(RTTOV_PATH)/include 
 RTTOV_MOD_PATH   = $(RTTOV_PATH)/mod
