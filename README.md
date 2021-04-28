@@ -79,21 +79,34 @@ rttov121: simulator
 RTTOV i.e. if the location of bin/ is not in the top-level RTTOV directory. If specified BIN must give the location of
 the directory containing binary executables relative to the top-level RTTOV distribution directory (e.g. if you specified
 INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/gfortran/bin).
+
+4. Create the input data to RTTOV (subset_rttov_T12.nc)
+   #source ~/.bashrc
+   #conda activate phd
+   #module load nco
+  ```
+  $ cd /work/bb1036/b381362/dataset
+  $ bash create_dataset_rttov.py
   
-    
-3. Compile ML_RTTOV
-  - module load intel
   ```
-  $ ML_RTTOV   make
-  $ ML_RTTOV ./ml_rttov
+5. Compile ML_RTTOV
+
+  ```
+  $ cd /work/bb1036/b381362/github/Retrievals/ML_RTTOV/
+  $ module load intel
+  $ make
+  $ ./ml_rttov
   ```
 
 
-4. Dataset availables in Mistral:
+5. Dataset availables in Mistral:
 ```
  $ cd /work/bb1036/b381362/dataset/test-2.nc
- $ cd cd /work/bb1036/b381362/dataset (My dataset)
+ $ cd cd /work/bb1036/b381362/dataset/data_rttov_T12.nc
+ $ cd cd /work/bb1036/b381362/dataset/subset_rttov_T12.nc (My dataset)
  ```
+ 
+ 
 
  
 
