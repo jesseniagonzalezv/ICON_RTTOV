@@ -9,17 +9,15 @@ rttov121: simulator
 ----------
 ::MISTRAL
 1. Create all the folder. It is organized in the following way:
- 
+        
+        $cd /work/bb1036/b381362/
         ├── github
         │      ├── Retrievals
         │            ├── ML_RTTOV
         │                   └── src
         │                   └── Makefile
-        ├── storage
-        │      ├── data
-        │            ├── tools
-        │                   ├── RTTOV
-        │                         ├── rttov121 ****Main folder RTTOV simulator 
+        ├── tools
+        │            ├── rttov121 ****Main folder RTTOV simulator 
         │                                   (files generated) 
         │                                    └── obj
         │                                    └── mod
@@ -48,22 +46,36 @@ rttov121: simulator
       - FFLAGS_NETCDF  = -D_RTTOV_NETCDF -I$(NETCDF_PREFIX)/include
       - LDFLAGS_NETCDF = -L$(NETCDF_PREFIX)/lib -lnetcdff
   ```
-  $ cd src
+  $ source ~/.bashrc
+  $ conda activate phd
+  $ module load intel 
+  $ cd /work/bb1036/b381362/tools/rttov121/src
   $ ../build/rttov_compile.sh
   ```
       - Specify required compiler flag file (leave blank for default: gfortran)
-       -  > ifort
-      - Specify installation directory relative to top-level RTTOV directory (leave blank for default: ./)
-       - > ../../../../scripts/tools/RTTOV/rttov121-new
+          > ifort
+      -  Specify installation directory relative to top-level RTTOV directory (leave blank for default: ./)
+          > 
+      -  Have you updated the file build/Makefile.local with the location of your HDF5 installation? (y/n)
+          > y
+         Testing for f2py...
+          ...f2py does not appear to be installed, Python interface and RTTOV GUI cannot be compiled
+
+      -  Previous build detected in ./: perform a clean compilation? (y/n)
+          Choose y if you have changed the compilation options since the previous build and re-compilation fails.
+          > y
+
+      -  Specify any additional flags to pass to make (e.g. -j); leave blank if unsure
+          > 
   
         ├── Compiling with flags    : ifort
-        ├── Compiling in directory  : ../../../../scripts/tools/RTTOV/rttov121-new
+        ├── Compiling in directory  : ./
         ├──    RTTOV features available:
         ├──    HDF5 coefficient I/O    : y
         ├──    Emissivity/BRDF atlases : y
         ├──    C/C++ wrapper           : y
-        ├──    Python wrapper          : n *change to y
-        ├──    RTTOV GUI               : n *change to y
+        ├──    Python wrapper          : n 
+        ├──    RTTOV GUI               : n 
   - Verifying the RTTOV
   ```
   $RTTOV/rttov_test ./test_rttov12.sh ARCH=myarch [BIN=bindir]
