@@ -89,10 +89,11 @@ the directory containing binary executables relative to the top-level RTTOV dist
 INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/gfortran/bin).
 
 4. Create the input data to RTTOV (subset_rttov_T12.nc)
+  ```
    #source ~/.bashrc
    #conda activate phd
    #module load nco
-  ```
+ 
   $ cd /work/bb1036/b381362/dataset
   $ bash create_dataset_rttov.py
   
