@@ -87,8 +87,11 @@ def main():
 
     height_bnds[:,:]=ds['height_bnds'][1:,:]
 
-    Z_ifc[:,:,:]=ds['z_ifc'][1:,:,:]
-    Z_mc[:,:,:]=ds['z_mc']
+    #Z_ifc[:,:,:]=ds['z_ifc'][1:,:,:]
+    Z_ifc[:,:,:]=ds['z_ifc'][:0:-1,:,:]
+
+    Z_mc[:,:,:]=ds['z_mc'][::-1,:,:]
+
     Topography_c[:,:]=ds['topography_c']
 
 

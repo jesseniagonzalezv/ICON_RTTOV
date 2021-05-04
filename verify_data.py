@@ -8,9 +8,13 @@ def main():
     arg('--path-data-ini', type=str, default='input.nc', help='path of the initial data is')
     arg('--path-data-copied', type=str, default='input_copied.nc', help='path of the copied data is' )
     arg('--type-data', type=str, default='2D', help='2D or 3D or surface' )
+    arg('--n-timestep', type=int, default=7, help='timestep 2=13 or 3D=7')
+    #arg('--flip-div100', type=str, default='y', help='y= it was flip and divided between 100, n=not flip, not divided' )
+
 
 
     args = parser.parse_args()
+
 
     fname = args.path_data_ini 
     fname_1timestep = args.path_data_copied 
@@ -19,35 +23,43 @@ def main():
     ds = xr.open_dataset(fname)
     ds_1timestep = xr.open_dataset(fname_1timestep)
 
-    print(ds_1timestep.data_vars)
+    ds_variables=ds_1timestep.data_vars
+    print(ds_variables)
+
+    if 'time' in ds_variables:
+      print('timestep',ds_variables['time'].values)
 
     if(args.type_data == '3D'):
       print('Verifing copied data_3D')
-      print('timestep',ds_1timestep.data_vars['time'].values)
-      for v in ds_1timestep.data_vars:
-        if (v != ('time') and v !=('height_bnds')):         	 
-          print(v,':copied correctly',np.array_equal(ds[v].values[5,:,:,:],ds_1timestep[v].values[:,:,:]))
-   		
+      for v in ds_variables:
+        #if (v != ('time') and v !=('height_bnds')): 
+        if(v == ('cli') or v == ('clw') or v == ('hus') or v == ('qr') or v == ('qs') or v == ('pres') or v == ('ta') ):       	 
+          #print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),:,:,:],ds_1timestep[v].values[:,:,:]))
+          print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),::-1,:,:],ds_1timestep[v].values[:,:,:]))
+
+        elif(v == ('clc')):
+          print(v,':copied correctly',np.array_equal((ds[v].values[(args.n_timestep-1),::-1,:,:]/100),ds_1timestep[v].values[:,:,:]))
+
     elif(args.type_data == '2D'):
       print('Verifing copied data_2D')
-      print('timestep',ds_1timestep.data_vars['time'].values)
-      for v in ds_1timestep.data_vars:
-        if (v != ('ps') and v !=('t_s') and v != ('time') and v !=('height_2')):
-          print(v,':copied correctly',np.array_equal(ds[v].values[25,0,:,:],ds_1timestep[v].values[:,:]))
+      for v in ds_variables:        
+        if (v == ('u_10m') or v ==('v_10m')):
+          print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),0,:,:],ds_1timestep[v].values[:,:]))
           	    		
-        elif(v != ('time') and v !=('height_2')):
-          print(v,':copied correctly',np.array_equal(ds[v].values[25,:,:],ds_1timestep[v].values[:,:]))
+        elif(v == ('ps') or v ==('t_s')):
+          print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),:,:],ds_1timestep[v].values[:,:]))
          	    		    
     elif(args.type_data == 'surface'):
       print('Verifing copied data_surface')
-      for v in ds_1timestep.data_vars:
-        if (v == ('z_ifc') and v != ('height_bnds') ):
-          print(v,':copied correctly',np.array_equal(ds[v].values[1:,:,:],ds_1timestep[v].values[:,:,:]))
-        elif (v != ('topography_c') and v != ('height_bnds') ):
-          print(v,':copied correctly',np.array_equal(ds[v].values[:,:,:],ds_1timestep[v].values[:,:,:]))
+      for v in ds_variables:
+        if (v == ('z_ifc')):
+          #print(v,':copied correctly',np.array_equal(ds[v].values[1:,:,:],ds_1timestep[v].values[:,:,:]))
+          print(v,':copied correctly',np.array_equal(ds[v].values[:0:-1,:,:],ds_1timestep[v].values[:,:,:]))
+        elif (v == ('z_mc')): 
+          print(v,':copied correctly',np.array_equal(ds[v].values[::-1,:,:],ds_1timestep[v].values[:,:,:]))
                                            
-        elif( v !=('height_bnds')):
-            print(v,':copied correctly',np.array_equal(ds[v].values[:,:],ds_1timestep[v].values[:,:]))
+        elif( v ==('topography_c')):
+          print(v,':copied correctly',np.array_equal(ds[v].values[:,:],ds_1timestep[v].values[:,:]))
                         
 
 
