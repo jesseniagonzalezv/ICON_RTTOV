@@ -374,7 +374,7 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x4=x4,y3=icon%Reff)
           endif
-       case ('ts')!case ('skt')
+       case ('t_s')!case ('skt')
           if (Lpoint) then
              icon%skt(1:npoints) = x1(1:npoints)
           else
