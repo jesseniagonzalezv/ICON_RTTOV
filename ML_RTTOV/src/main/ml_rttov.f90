@@ -18,10 +18,10 @@ PROGRAM ML_RTTOV
 
   ! Parameters (for now)
   CHARACTER(LEN=256), PARAMETER :: &
-       fname_in= "/work/bb1036/b381362/dataset/subset_rttov_T12.nc", & !"/work/bb1036/b381362/dataset/test-2.nc"  
+       fname_in= "/work/bb1036/b381362/dataset/subset_rttov_T12.nc", & !"/work/bb1036/b381362/dataset/test-2.nc"  data_rttov_T12.nc 
 
-       fname_out="/work/bb1036/b381362/output/output-subtest_rttov_T12.nc"   !"/work/bb1036/b381362/output/output-test-2.nc"
-  INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints=5369, npoints_it=2000 !5369 375193
+       fname_out="/work/bb1036/b381362/output/output-data_rttov_T12.nc"   !"/work/bb1036/b381362/output/output-test-2.nc" output-subtest_rttov_T12.nc
+  INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints=5369  , npoints_it=2000 !375193 5369
   LOGICAL, PARAMETER :: flag_ret = .FALSE.
   
   ! Local variables
@@ -41,7 +41,7 @@ PROGRAM ML_RTTOV
 
   zenangle=0._wp; azangle=0._wp
   sunzenangle=30._wp; sunazangle=0._wp
-  month = 4
+  month = 5 !4
   
   ! Construct the icon pointer
   CALL construct_icon(npoints,nlevels,nhydro,icon)
@@ -103,7 +103,8 @@ PROGRAM ML_RTTOV
 
      ELSE
         oe%flag_rttov(:) = .TRUE.
-        CALL run_rttov(rttov_atm,rttov_opt,oe,dealloc=.FALSE.)        
+
+        CALL run_rttov(rttov_atm,rttov_opt,oe,dealloc=.FALSE.)            !!!  comente     
      END IF
                 
      oe%y = oe%f; oe%y_clear = oe%f_clear     
