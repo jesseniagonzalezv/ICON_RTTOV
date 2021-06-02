@@ -314,18 +314,18 @@ CONTAINS
           else
              call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%mr_ccice)
           endif
-       case ('qr')!case ('fl_lsrain')
-          if (Lpoint) then
-             icon%fl_lsrain(1:npoints,:) = x2(1:npoints,1:nlevels)
-          else
-             call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%fl_lsrain)
-          endif
-       case ('qs')!case ('fl_lssnow')
-          if (Lpoint) then
-             icon%fl_lssnow(1:npoints,:) = x2(1:npoints,1:nlevels)
-          else
-             call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%fl_lssnow)
-          endif
+       !case ('qr')!case ('fl_lsrain')
+        !  if (Lpoint) then
+         !    icon%fl_lsrain(1:npoints,:) = x2(1:npoints,1:nlevels)
+          !else
+          !   call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%fl_lsrain)
+          !endif
+       !case ('qs')!case ('fl_lssnow')
+        !  if (Lpoint) then
+         !    icon%fl_lssnow(1:npoints,:) = x2(1:npoints,1:nlevels)
+         ! else
+          !   call map_ll_to_point(Na,Nb,npoints,x3=x3,y2=icon%fl_lssnow)
+          !endif
        case ('fl_lsgrpl')
           if (Lpoint) then
              icon%fl_lsgrpl(1:npoints,:) = x2(1:npoints,1:nlevels)
