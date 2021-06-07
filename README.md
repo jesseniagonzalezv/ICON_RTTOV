@@ -80,9 +80,11 @@ rttov121: simulator
   ```
   $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/rhel6-x64/hdf5/hdf5-1.8.14-intel14/lib/:/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/lib/
   $RTTOV/rttov_test ./test_rttov12.sh ARCH=myarch [BIN=bindir]
-   ├──  ./test_fwd.sh TEST_LIST=modis/201 ARCH=ifort
-  $RTTOV/bin ./rttov_test.pl ARCH=myarch [BIN=bindir] TEST_LIST=hirs/001,avhrr/001 DIRECT=1
+   ├──  ./test_fwd.sh ARCH=ifort
+  $RTTOV/rttov_test ./rttov_test.pl ARCH=myarch [BIN=bindir] TEST_LIST=hirs/001,avhrr/001 DIRECT=1
+   ├── ./rttov_test.pl TEST_LIST=modis/201 ARCH=ifort DIRECT=1
   $RTTOV/rttov_test ./run_example_fwd.sh ARCH=myarch [BIN=bindir]
+
   ```
   The ARCH parameter should match the one used when you compiled RTTOV. The BIN parameter is optional
 (indicated by the square brackets []). It is only required if the INSTALLDIR parameter was supplied when compiling
