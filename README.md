@@ -84,6 +84,11 @@ rttov121: simulator
   $RTTOV/rttov_test ./rttov_test.pl ARCH=myarch [BIN=bindir] TEST_LIST=hirs/001,avhrr/001 DIRECT=1
    ├── ./rttov_test.pl TEST_LIST=modis/201 ARCH=ifort DIRECT=1
   $RTTOV/rttov_test ./run_example_fwd.sh ARCH=myarch [BIN=bindir]
+  
+  ./test_solar.sh TEST_LIST=modis/201 ARCH=ifort DIRECT=1 or ./test_fwd.sh TEST_LIST=modis/202 ARCH=ifort DIRECT=1
+   $python rttov_test_plot.py
+   tes_fwd.1.ifort/modis/201
+   
 
   ```
   The ARCH parameter should match the one used when you compiled RTTOV. The BIN parameter is optional
