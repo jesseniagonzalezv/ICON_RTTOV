@@ -87,7 +87,7 @@ rttov121: simulator
   
   ./test_solar.sh TEST_LIST=modis/201 ARCH=ifort DIRECT=1 or ./test_fwd.sh TEST_LIST=modis/202 ARCH=ifort DIRECT=1
    $python rttov_test_plot.py
-   tes_fwd.1.ifort/modis/201
+   test_fwd.1.ifort/modis/201
    
 
   ```
