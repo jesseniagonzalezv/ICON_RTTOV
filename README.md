@@ -78,9 +78,9 @@ rttov121: simulator
         ├──    RTTOV GUI               : n 
   - Verifying the RTTOV
   ```
-  $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/rhel6-x64/hdf5/hdf5-1.8.14-inte
-l14/lib/:/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/lib/
+  $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/rhel6-x64/hdf5/hdf5-1.8.14-intel14/lib/:/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.2-intel14/lib/
   $RTTOV/rttov_test ./test_rttov12.sh ARCH=myarch [BIN=bindir]
+   ├──  ./test_fwd.sh TEST_LIST=modis/201 ARCH=ifort
   $RTTOV/bin ./rttov_test.pl ARCH=myarch [BIN=bindir] TEST_LIST=hirs/001,avhrr/001 DIRECT=1
   $RTTOV/rttov_test ./run_example_fwd.sh ARCH=myarch [BIN=bindir]
   ```
