@@ -22,7 +22,14 @@ CONTAINS
          ml
     
     ml%y(idx_start:idx_end,:) = oe%y(:,:)
-    ml%y_clear(idx_start:idx_end,:) = oe%y_clear(:,:)    
+    ml%y_clear(idx_start:idx_end,:) = oe%y_clear(:,:)  
+ 
+        !!!!!!!!!!!!!! JGV 
+    ml%f(idx_start:idx_end,:) = oe%f(:,:)
+    ml%f_clear(idx_start:idx_end,:) = oe%f_clear(:,:)   
+     !!!!!!!!!!!!!! end JGV  
+
+     
     ml%brdf(idx_start:idx_end,:) = oe%brdf(:,:)
     ml%Xip1(idx_start:idx_end,:) = oe%Xip1(:,:)
     ml%iwp_model(idx_start:idx_end) = oe%iwp_model(:)
@@ -33,6 +40,8 @@ CONTAINS
 
   SUBROUTINE ml_setup(idx_start,idx_end,nlevels,y,flag_oe)
 
+    !INTEGER(kind=4), PARAMETER :: nchannels = rttov_nchannels
+    !! I am working with 36 channesl    
     INTEGER(kind=4), PARAMETER :: nchannels = rttov_nchannels
     
     ! Input variables

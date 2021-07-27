@@ -145,6 +145,8 @@ MODULE ml_types
           ph,           & ! Pressure @ model half levels
           t,            & ! Temperature 
           q,            & ! Specific humidity
+          
+          
           o3              ! Ozone
      ! These fields below are needed ONLY for the RTTOV all-sky brightness temperature
      real(wp),dimension(:,:),pointer :: &

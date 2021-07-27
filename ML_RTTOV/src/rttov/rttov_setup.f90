@@ -79,6 +79,8 @@ CONTAINS
     rttov_atm%dz         => icon%dz(idx_start:idx_end,:)        
     rttov_atm%t          => icon%T_lev(idx_start:idx_end,:)
     rttov_atm%q          => icon%sh_lev(idx_start:idx_end,:)
+    
+    
     rttov_atm%o3         => icon%mr_ozone_lev(idx_start:idx_end,:)
     rttov_atm%tca        => icon%tca(idx_start:idx_end,:)
     rttov_atm%iwc        => icon%iwc(idx_start:idx_end,:)
