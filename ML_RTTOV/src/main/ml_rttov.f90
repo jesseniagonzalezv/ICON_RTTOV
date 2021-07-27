@@ -18,10 +18,10 @@ PROGRAM ML_RTTOV
 
   ! Parameters (for now)
   CHARACTER(LEN=256), PARAMETER :: &
-       fname_in= "/work/bb1036/b381362/dataset/subset_rttov_T12.nc", & !"/work/bb1036/b381362/dataset/test-2.nc"  data_rttov_T12.nc 
+       fname_in= "/work/bb1036/b381362/dataset/data_rttov_T12.nc    ", & !"/work/bb1036/b381362/dataset/subset_rttov_T12.nc"  
 
-       fname_out="/work/bb1036/b381362/output/output-data_rttov_T12.nc"   !"/work/bb1036/b381362/output/output-test-2.nc" output-subtest_rttov_T12.nc
-  INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints=5369  , npoints_it=2000 !375193 5369
+       fname_out="/work/bb1036/b381362/output/output-data_rttov_T12.nc"   !"/work/bb1036/b381362/output/"  output-subtest_rttov_T12.nc
+  INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints=375193  , npoints_it=2000 ! 5369
   LOGICAL, PARAMETER :: flag_ret = .FALSE.
   
   ! Local variables
@@ -107,7 +107,7 @@ PROGRAM ML_RTTOV
         CALL run_rttov(rttov_atm,rttov_opt,oe,dealloc=.FALSE.)            !!!  comente     
      END IF
                 
-     oe%y = oe%f; oe%y_clear = oe%f_clear     
+     !oe%y = oe%f; oe%y_clear = oe%f_clear     yo cambie esto to print tota,clear and reflectances no unit
      oe%iwp_model = oe%iwp
      
      IF(flag_ret) CALL oe_run(oe,rttov_atm_oe,rttov_opt)

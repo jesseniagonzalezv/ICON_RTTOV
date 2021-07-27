@@ -94,8 +94,8 @@ CONTAINS
     opts % rt_ir % addaerosl           = .FALSE. ! Don't include aerosol effects
     opts % rt_ir % addclouds           = .TRUE.  ! Don't include cloud effects
 
-    opts % rt_ir % ir_scatt_model      = 1 ! 1=DOM
-    opts % rt_ir % vis_scatt_model     = 1 ! 1=DOM
+    opts % rt_ir % ir_scatt_model      = 2!2 ! 1=DOM ODran estaba 1
+    opts % rt_ir % vis_scatt_model     = 2!2 ! 1=DOM Odran estaba 1 
     opts % rt_ir % dom_nstreams        = 8  
 
     opts % rt_ir % ozone_data          = .FALSE. ! Set the relevant flag to .TRUE.

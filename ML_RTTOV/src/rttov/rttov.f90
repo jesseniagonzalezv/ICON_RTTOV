@@ -216,15 +216,19 @@ CONTAINS
        
        profiles(iprof) % p = rttov_atm % p(idx_prof,:)*1E-2 ! change to hPa
        profiles(iprof) % t = rttov_atm % t(idx_prof,:)
-       profiles(iprof) % q(:) = 0._wp !rttov_atm % q(idx_prof,:) ! I left kg/kg, automatic choice in RRTOV?
-
+       profiles(iprof) % q(:) =rttov_atm % q(idx_prof,:)  ! 0._wp ! I left kg/kg, automatic choice in RRTOV?
+       
+     
+       
        profiles(iprof) % s2m % t = rttov_atm % t2m(idx_prof)
-       profiles(iprof) % s2m % q = 0._wp !rttov_atm % q2m(idx_prof)
+       profiles(iprof) % s2m % q = rttov_atm % q2m(idx_prof) !0._wp 
        profiles(iprof) % s2m % p = rttov_atm % p_surf(idx_prof)*1E-2 ! change to hPa
        profiles(iprof) % s2m % u = rttov_atm % u_surf(idx_prof)
        profiles(iprof) % s2m % v = rttov_atm % v_surf(idx_prof)
        profiles(iprof) % s2m % wfetc = 100000 !! used typical value given in documentation
 
+
+       
        profiles(iprof) % skin % t = rttov_atm % t_skin(idx_prof)
        profiles(iprof) % skin % salinity = 0.0 !! tmp, use other typical value
        profiles(iprof) % skin % fastem = (/3.0, 5.0, 15.0, 0.1, 0.3/) !! tmp, typical for land, adjust
@@ -249,6 +253,7 @@ CONTAINS
        profiles(iprof) % ice_scheme = 2  !! Use baran
 
        profiles(iprof) % cfrac = rttov_atm % tca(idx_prof,:)
+
 
        if (rttov_atm%lsmask(iprof) < 0.5) then
           profiles(iprof) % cloud(wcl_id_stco,:) = rttov_atm % lwc(idx_prof,:) * 1E3
@@ -370,6 +375,9 @@ CONTAINS
              oe%f_clear(idx_prof,ichan) = radiance % refl_clear(j)           
           end if
           oe%brdf(idx_prof,ichan) = reflectance(j) % refl_out
+          oe%Y(idx_prof,ichan) = radiance % total(j)
+          oe%Y_clear(idx_prof,ichan) = radiance % clear(j)  
+             
           ! write(*,*) oe%brdf(iprof,ichan)
           ichan=ichan+1
        END DO
