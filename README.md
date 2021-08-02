@@ -112,6 +112,7 @@ INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/
   ```
   $ cd /work/bb1036/b381362/github/Retrievals/ML_RTTOV/
   $ module load intel
+  Create the files bin, mod, lib
   $ make
   $ ./ml_rttov
   ```
