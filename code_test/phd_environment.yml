@@ -45,6 +45,7 @@ dependencies:
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
   - jedi=0.18.0=py38haa95532_1
   - jinja2=3.0.1=pyhd3eb1b0_0
+  - joblib=1.0.1=pyhd3eb1b0_0
   - jpeg=9d=h8ffe710_0
   - json5=0.9.6=pyhd3eb1b0_0
   - jsonschema=3.2.0=py_2
@@ -98,6 +99,7 @@ dependencies:
   - pickleshare=0.7.5=pyhd3eb1b0_1003
   - pillow=8.3.1=py38h4fa10fc_0
   - pip=21.0.1=py38haa95532_0
+  - plotly=5.2.2=pyhd8ed1ab_0
   - proj=7.2.0=h1cfcee9_2
   - prometheus_client=0.11.0=pyhd3eb1b0_0
   - prompt-toolkit=3.0.17=pyh06a4308_0
@@ -120,6 +122,7 @@ dependencies:
   - pyzmq=22.2.1=py38hd77b12b_1
   - qt=5.9.7=vc14h73c81de_0
   - requests=2.25.1=pyhd3eb1b0_0
+  - scikit-learn=0.24.2=py38hf11a4ad_1
   - scipy=1.6.2=py38h66253e8_1
   - seaborn=0.11.1=pyhd3eb1b0_0
   - send2trash=1.5.0=pyhd3eb1b0_1
@@ -127,10 +130,13 @@ dependencies:
   - shapely=1.7.1=py38h6953702_1
   - sip=4.19.13=py38ha925a31_0
   - six=1.16.0=pyhd3eb1b0_0
+  - sklearn-pandas=2.2.0=pyhd8ed1ab_0
   - sniffio=1.2.0=py38haa95532_1
   - sqlite=3.36.0=h2bbff1b_0
+  - tenacity=6.3.1=py38haa95532_0
   - terminado=0.9.4=py38haa95532_0
   - testpath=0.5.0=pyhd3eb1b0_0
+  - threadpoolctl=2.2.0=pyhbf3da8f_0
   - tk=8.6.10=he774522_0
   - tornado=6.1=py38h2bbff1b_0
   - traitlets=5.0.5=pyhd3eb1b0_0
