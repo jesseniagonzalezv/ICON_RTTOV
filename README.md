@@ -128,7 +128,7 @@ INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/
  
 
 6. Output
-  - BTs(brightness temperatures) for channels with significant thermal component (wavelengths above 3um) and reflectances for solar-affected channels (wavelengths below 5um).
+  - BTs(brightness temperatures) for channels with significant thermal component (wavelengths above 3um) and reflectances for solar-affected channels (wavelengths below 5um). (channels with thermally emitted contribution only)
     
   - f: TOA BTs including clouds (K)/ TOA reflectances including clouds (no unit)
   - f_clear: TOA clear-sky BTs (K) / TOA clear-sky reflectances (no unit)
@@ -137,7 +137,17 @@ INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/
     
  Coefficient: rtcoef_eos_1_modis.dat (0 => thermal; 1 => thermal+solar; 2 => solar)
   - 1-19,26: solar (2)
-  - 20-25: thermal+solar (1)
-  - 27-36: thermal (0)
+  - 20-25: thermal+solar (1) 
+  - 27-36: thermal (0)  
+  - Example of Modis:
+     - BT values in 20-25,27-36 channels
+     - Radiances in all channels (1-28:values lower than 20,28-36 between 20-120)
+     - Reflectances 1-25 
     
+Obs: 
+- shortwave or solar radiation (radiation can be transmitted, absorbed or scattered in the atmosphere): wavelengths between 0.2 and 4 µm.
+   - Solar radiation can be subdivided further into ultraviolet radiation (λ < 0.38 µm), visible radiation (0.38 µm < λ < 0.75 µm) and near infrared radiation (λ > 0.75 µm). 
+- longwave or terrestrial radiation (radiation is absorbed and re-emitted): wavelengths beyond 4 µm. 
+   -It consists entirely of infrared radiation (0.75 µm < λ < 1 mm).
+Ref: Lohmann, U., Lüönd, F., & Mahrt, F. (2016). An Introduction to Clouds: From the Microscale to Climate. Cambridge: Cambridge University Press. doi:10.1017/CBO9781139087513
 
