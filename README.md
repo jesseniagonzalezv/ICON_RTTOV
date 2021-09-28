@@ -149,5 +149,6 @@ Obs:
    - Solar radiation can be subdivided further into ultraviolet radiation (λ < 0.38 µm), visible radiation (0.38 µm < λ < 0.75 µm) and near infrared radiation (λ > 0.75 µm). 
 - longwave or terrestrial radiation (radiation is absorbed and re-emitted): wavelengths beyond 4 µm. 
    -It consists entirely of infrared radiation (0.75 µm < λ < 1 mm).
-Ref: Lohmann, U., Lüönd, F., & Mahrt, F. (2016). An Introduction to Clouds: From the Microscale to Climate. Cambridge: Cambridge University Press. doi:10.1017/CBO9781139087513
+   
+``` Ref: Lohmann, U., Lüönd, F., & Mahrt, F. (2016). An Introduction to Clouds: From the Microscale to Climate. Cambridge: Cambridge University Press. doi:10.1017/CBO9781139087513 ```
 
