@@ -127,5 +127,18 @@ INSTALLDIR=install/gfortran when building RTTOV then you should use BIN=install/
  
  
 
+6. Output
+    BTs(brightness temperatures) for channels with significant thermal component (wavelengths above 3um) and reflectances for solar-affected channels (wavelengths below 5um).
+    
+    f: TOA BTs including clouds (K)/ TOA reflectances including clouds (no unit)
+    f_clear: TOA clear-sky BTs (K) / TOA clear-sky reflectances (no unit)
+    y: TOA radiances including clouds (mW/cm-1/sr/sq.m)
+    y_clear: TOA clear-sky (mW/cm-1/sr/sq.m)
+    
+ Coefficient: rtcoef_eos_1_modis.dat (0 => thermal; 1 => thermal+solar; 2 => solar)
  
+  1-19,26: solar (2)
+  20-25: thermal+solar (1)
+  27-36: thermal (0)
+    
 
