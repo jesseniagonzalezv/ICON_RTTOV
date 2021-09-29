@@ -2,7 +2,6 @@
 Input: MYD021KM modis radiances level 1B
 Output: Modis radiances in 36 channels in values  W/m2 -µm-sr
 # Reference https://hdfeos.org/zoo/LAADS/MYD021KM.A2002226.0000.006.2012033082925.hdf.py
-
 '''
 
 import os
@@ -12,12 +11,13 @@ import matplotlib.pyplot as plt
 from pyhdf.SD import SD, SDC
 import pprint
 #%matplotlib inline
+import argparse
 
 # plottinh
 from mpl_toolkits.basemap import Basemap
 
 
-def histrogram_raw_plot(out_file): 
+def histrogram_raw_plot(out_file,sds_list,band_list): 
     fig,axes = plt.subplots(5,8,figsize = (32,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
@@ -36,7 +36,7 @@ def histrogram_raw_plot(out_file):
     fig.savefig(out_file+"/MODIS_raw_histogram_by_channel.png")  
     plt.close()
 
-def histrogram_reflectances_plot(out_file): 
+def histrogram_reflectances_plot(out_file,sds_list,band_list,reflectance_list): 
     fig,axes = plt.subplots(3,8,figsize = (32,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
@@ -65,7 +65,7 @@ def histrogram_reflectances_plot(out_file):
     fig.savefig(out_file+"/MODIS_reflectance_histogram_by_channel.png")  
     plt.close()
 
-def raw_plot(out_file):
+def raw_plot(out_file,sds_list,band_list):
     fig,axes = plt.subplots(5,8,figsize = (32,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
@@ -153,31 +153,7 @@ def radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list):
             radiance_list['radiance_'+ x][band] = (sds_list[x][band] - offset_list['radiance_offsets_'+ x][band]) * scale_list['radiance_scales_'+ x][band]
     return radiance_list
 
-def radiances_plot(data_radiances_38bands,out_file)
-    fig,axes = plt.subplots(5,8,figsize = (30,20))
-    axes = axes.ravel()
-    fig.subplots_adjust(wspace=0.1, hspace=0.15)
-    n_bands_sample=38 #7
-    for i in range(n_bands_sample):
-        #axes[i].imshow(X_train[:,:,i],cmap='gray', vmin=0, vmax=1)
-        #axes[i].imshow(X_data[i,:,:],cmap='gray')
-        pcm = axes[i].imshow(np.fliplr(data_radiances_38bands[i]),  origin='lower') #interpolation='nearest'
-
-        cbar=fig.colorbar(pcm, ax=axes[i])
-        cbar.ax.get_yaxis().labelpad = 15
-        cbar.set_label('$(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$ \n \n', rotation=270)
-
-        #out2=cax.ax.set_ylabel('$(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$ \n \n')
-        #out2.set_rotation(270)
-        axes[i].set_title('Radiances \n in channel %0.1f'% (bands_radiances_38bands[i]))
-        
-    fig.delaxes(axes[-1])
-    fig.delaxes(axes[-2])
-    plt.tight_layout()
-    fig.savefig(out_file+"Ony_valid_range_MODIS_radiances_by_channel.png")  
-    plt.close()
-
-def radiances_plot(data_radiances_38bands,out_file)
+def radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file):
     fig,axes = plt.subplots(5,8,figsize = (30,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.15)
@@ -240,6 +216,15 @@ Function to calculate the reflectances values after mask the values and plot the
 def mask_refletances_values(sds_list,band_list,offset_list,scale_list,out_file):
     #reflectance_list= { 'reflectance_sds_250_RefSB': [], 'reflectance_sds_500_RefSB': [],'reflectance_sds_1_RefSB':[], 
     #            'reflectance_sds_1_Ems':[]}
+        attrs = sds_list['sds_250_RefSB'].attributes(full=1)
+    fva=attrs["_FillValue"]
+    _FillValue = fva[0]
+    vra=attrs["valid_range"]
+    valid_min = vra[0][0]        
+    valid_max = vra[0][1]
+    ua=attrs["radiance_units"]
+    units = ua[0]
+
     reflectance_list= {}
     for x in sds_list.keys(): #for key, value in sds_list.items():
         if (x != 'sds_1_Ems'):
@@ -359,7 +344,7 @@ def save_data(name_file,array,out_file):
     # Flush and close the HDF file
     filehdf.end()
 
-def verify_copy(name_file,array):
+def verify_copy(name_file,array,out_file):
     # Radiances dataset -all
     modis_file = out_file + '/sample_'+name_file+".MYD021KM.A2013122.1140.L1B.hdf"
     filehdf_sample_radiances = SD(modis_file, SDC.READ)
@@ -381,17 +366,18 @@ def verify_copy(name_file,array):
 
 def main():
     parser = argparse.ArgumentParser()
-	arg = parser.add_argument
-	arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset', help='path of the dataset is')
-	arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/dataset', help='path of the output data is' )
-	args = parser.parse_args()
-	
+    arg = parser.add_argument
+    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset', help='path of the dataset is')
+    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/dataset', help='path of the output data is' )
+    args = parser.parse_args()
+
     fname_in = args.path_in 
     out_file = args.path_out 
-
-    os.chdir(fname_in)
-    geo_file = 'MYD03.A2013122.1140.061.2018046005026.hdf'
-
+    
+   
+    #os.chdir(fname_in)
+    geo_file = fname_in+'/MYD03.A2013122.1140.061.2018046005026.hdf'
+    #print(geo_file)
    # Geo File #
     file_geo = SD(geo_file, SDC.READ)
     print("Reading MODIS LEVEL 1B + Geo File",geo_file)
@@ -417,7 +403,7 @@ def main():
 
    # Radiances File #
     # Read dataset.
-    modis_file = 'MYD021KM.A2013122.1140.061.2018046032403.hdf'
+    modis_file = fname_in+'/MYD021KM.A2013122.1140.061.2018046032403.hdf'
     file = SD(modis_file, SDC.READ)
 
     print(file.info())
@@ -481,8 +467,8 @@ def main():
     #pprint.pprint ("Values scales  :" + str(dict(scale_list)))
 
     #### histogram
-    histrogram_raw_plot(out_file)
-    raw_plot(out_file)
+    #histrogram_raw_plot(out_file,sds_list,band_list)
+    #raw_plot(out_file,sds_list,band_list)
 
     radiance_list= { 'radiance_sds_250_RefSB': [], 'radiance_sds_500_RefSB': [],'radiance_sds_1_RefSB':[], 
             'radiance_sds_1_Ems':[]}
@@ -491,10 +477,10 @@ def main():
         radiance_list['radiance_'+x] = np.zeros(np.shape(sds_list[x]))
         print('radiance_'+x,np.shape(radiance_list['radiance_'+x] ))
 
-    #radiance_list=radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list):
+    ###radiance_list=radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list)
 
     ### eliminate values out the range
-    radiance_list=mask_radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list,out_file):
+    radiance_list=mask_radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list,out_file)
 
     data_radiances_38bands = np.concatenate((radiance_list['radiance_sds_250_RefSB'],radiance_list['radiance_sds_500_RefSB'],radiance_list['radiance_sds_1_RefSB'],radiance_list['radiance_sds_1_Ems']))
     data_radiances_38bands= np.ma.masked_array(data_radiances_38bands, np.isnan(data_radiances_38bands))
@@ -502,7 +488,7 @@ def main():
     bands_radiances_38bands = np.concatenate((band_list['band_sds_250_RefSB'],band_list['band_sds_500_RefSB'],band_list['band_sds_1_RefSB'],band_list['band_sds_1_Ems']))
     print('Ready_data_radiances_38bands',np.shape(data_radiances_38bands))
 
-    radiances_plot(data_radiances_38bands)
+    radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file)
 
     #subset
     subset_data_radiances_38bands=data_radiances_38bands[:,1000:1600,400:1000]
@@ -510,15 +496,19 @@ def main():
 
     #projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radiances_38bands):
 
-
-    reflectance_list=refletances(sds_list,band_list,offset_list,scale_list,out_file)
-    rgb_reflectances(sds_list,offset_list,scale_list,out_file)
-
     save_data("subset_radiances_38bands",subset_data_radiances_38bands,out_file)
     save_data("radiances_38bands",data_radiances_38bands,out_file)
 
-    verify_copy("subset_radiances_38bands",subset_data_radiances_38bands)
-    verify_copy("radiances_38bands",data_radiances_38bands)
+    verify_copy("subset_radiances_38bands",subset_data_radiances_38bands,out_file)
+    verify_copy("radiances_38bands",data_radiances_38bands,out_file)
+
+
+    reflectance_list=mask_refletances_values(sds_list,band_list,offset_list,scale_list,out_file)
+    
+    histrogram_reflectances_plot(out_file,sds_list,band_list,reflectance_list)
+
+    rgb_reflectances(sds_list,offset_list,scale_list,out_file)
+
 
 
 if __name__ == '__main__':
