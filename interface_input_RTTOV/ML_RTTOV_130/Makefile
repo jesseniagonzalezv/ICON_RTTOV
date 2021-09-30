@@ -10,7 +10,7 @@ F90FLAGS = -module $(mod) -fpp -qopenmp -O0 -debug -g -traceback -check bounds
 # ---------------------------------------------------------------------------------------------------------------------------------------
 main_home=/work/bb1036/b381362
 #basedir = $(HOME)/github/Retrievals/ML_RTTOV
-basedir = $(main_home)/github/ML_RTTOV_130
+basedir = $(main_home)/github/ICON_RTTOV_interface_input_RTTOV/ML_RTTOV_130
 
 src = $(basedir)/src
 obj = $(basedir)/obj

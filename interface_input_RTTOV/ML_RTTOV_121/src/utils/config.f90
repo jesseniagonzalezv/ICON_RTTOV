@@ -35,7 +35,7 @@ MODULE ML_CONFIG
 
        RTTOV_NCHANNELS = 36,  &
        RTTOV_PLATFORM = 9,      &
-       RTTOV_SATELLITE = 1,     &
+       RTTOV_SATELLITE = 2,     &
        RTTOV_INSTRUMENT = 13,   &
        RTTOV_DOSOLAR = 1
        

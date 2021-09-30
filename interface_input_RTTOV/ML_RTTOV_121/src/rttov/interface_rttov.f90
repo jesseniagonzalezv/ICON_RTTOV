@@ -72,9 +72,9 @@ CONTAINS
        sat="_"//trim(adjustl(sat))//"_"
     END IF
     
-    coef_filename = "/pf/b/b381362/storage/data/tools/RTTOV/rttov121/rtcoef_rttov12/rttov9pred54L/rtcoef_"//&
+    coef_filename = "/work/bb1036/b381362/tools/rttov121/rtcoef_rttov12/rttov9pred54L/rtcoef_"//&
          trim(platform_name(rttov_opt%platform))//trim(sat)//trim(inst_name(rttov_opt%instrument))//".dat"
-    cld_coef_filename = "/pf/b/b381362/storage/data/tools/RTTOV/rttov121/rtcoef_rttov12/cldaer_visir/sccldcoef_"//&
+    cld_coef_filename = "//work/bb1036/b381362/tools/rttov121/rtcoef_rttov12/cldaer_visir/sccldcoef_"//&
          trim(platform_name(rttov_opt%platform))//trim(sat)//trim(inst_name(rttov_opt%instrument))//".dat"    
 
     
@@ -149,7 +149,7 @@ CONTAINS
          imonth,                   &
          atlas_type,               & ! Selects MW (1) or IR (2)
          emis_atlas,               &
-         path = '/pf/b/b381362/storage/data/tools/RTTOV/rttov121/emis_data', & ! The default path to atlas data
+         path = '/work/bb1036/b381362/tools/rttov121/emis_data', & ! The default path to atlas data
          coefs = coefs) ! This is mandatory for the CNRM MW atlas, ignored by TELSEM2;
     ! if supplied for IR atlases they are initialised for this sensor
     ! and this makes the atlas much faster to access
@@ -166,7 +166,7 @@ CONTAINS
             opts,                   &
             imonth,                 &
             brdf_atlas,             &
-            path='/pf/b/b381362/storage/data/tools/RTTOV/rttov121/brdf_data', &  ! The default path to atlas data
+            path='/work/bb1036/b381362/tools/rttov121/brdf_data', &  ! The default path to atlas data
             coefs = coefs) ! If supplied the BRDF atlas is initialised for this sensor and
        ! this makes the atlas much faster to access
        IF (errorstatus /= errorstatus_success) THEN
