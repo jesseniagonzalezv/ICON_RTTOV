@@ -15,6 +15,7 @@ import argparse
 
 # plottinh
 from mpl_toolkits.basemap import Basemap
+import cartopy.crs as ccrs
 
 
 def histrogram_raw_plot(out_file,sds_list,band_list): 
@@ -34,35 +35,6 @@ def histrogram_raw_plot(out_file,sds_list,band_list):
     fig.delaxes(axes[-2])
     plt.tight_layout()
     fig.savefig(out_file+"/MODIS_raw_histogram_by_channel.png")  
-    plt.close()
-
-def histrogram_reflectances_plot(out_file,sds_list,band_list,reflectance_list): 
-    fig,axes = plt.subplots(3,8,figsize = (32,20))
-    axes = axes.ravel()
-    fig.subplots_adjust(wspace=0.1, hspace=0.2)
-
-#    for x in sds_list.keys():
-#     if (x != 'sds_1_Ems'):
-#         n_bands=len(band_list['band_'+x].get())
-#         for band in range(n_bands):
-#                 data =reflectance_list['reflectance_'+x][band]
-#                 data = np.ma.masked_array(data, np.isnan(data))
-
-#                 print(x,data.min())
-
-    i=0
-    for x in sds_list.keys():
-        if (x != 'sds_1_Ems'):
-            n_bands=len(band_list['band_'+x].get())
-            for band in range(n_bands):
-                a=reflectance_list['reflectance_'+x][band]
-                n, bins, patches = axes[i].hist(a)
-                axes[i].set_title('Histrogram \n in channel %0.1f max: %0.1f mean: %0.1f' %((band_list['band_'+x][band]),(a.max()),(a.mean())))
-                i+=1
-    fig.delaxes(axes[-1])
-    fig.delaxes(axes[-2])
-    plt.tight_layout()
-    fig.savefig(out_file+"/MODIS_reflectance_histogram_by_channel.png")  
     plt.close()
 
 def raw_plot(out_file,sds_list,band_list):
@@ -153,7 +125,29 @@ def radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list):
             radiance_list['radiance_'+ x][band] = (sds_list[x][band] - offset_list['radiance_offsets_'+ x][band]) * scale_list['radiance_scales_'+ x][band]
     return radiance_list
 
-def radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file):
+def radiances_histogram(sds_list,band_list,radiance_list):
+    #### histrogram radiances
+    fig,axes = plt.subplots(5,8,figsize = (32,20))
+    axes = axes.ravel()
+    fig.subplots_adjust(wspace=0.1, hspace=0.2)
+
+    i=0
+    for x in sds_list.keys():
+        n_bands=len(band_list['band_'+x].get())
+        for band in range(n_bands):
+            r=radiance_list['radiance_'+ x][band] 
+            r = np.ma.masked_array(r, np.isnan(r))
+            n, bins, patches = axes[i].hist(r)
+            axes[i].set_title('Histrogram radiances \n in channel %0.1f min: %0.1f max: %0.1f' %((band_list['band_'+x][band]),(r.min()),(r.max())))
+            i+=1
+    fig.delaxes(axes[-1])
+    fig.delaxes(axes[-2])
+    plt.tight_layout()
+    fig.savefig("MODIS_radiances_histogram_by_channel.png")  
+    plt.close()
+
+    
+def radiances_plot(data_radiances_38bands,bands_radiances_38bands,name_out,out_file):
     fig,axes = plt.subplots(5,8,figsize = (30,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.15)
@@ -174,12 +168,12 @@ def radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file):
     fig.delaxes(axes[-1])
     fig.delaxes(axes[-2])
     plt.tight_layout()
-    fig.savefig(out_file+"Ony_valid_range_MODIS_radiances_by_channel.png")  
+    fig.savefig(out_file+name_out)  
     plt.close()
 
 
 # it is not used
-def projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radiances_38bands):
+def projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radiances_38bands,data_radiances_38bands):
 
     subset_latitud=myd03_Latitude_data[1000:1600,400:1000]
     subset_longitude=myd03_Longitude_data[1000:1600,400:1000]
@@ -199,6 +193,7 @@ def projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radianc
     #https://matplotlib.org/basemap/users/mapsetup.html
     #https://rabernat.github.io/research_computing/intro-to-basemap.html
 
+    #########################################################################################
     m = Basemap(width=12000000,height=9000000,projection='lcc',
             resolution=None,lat_1=45.,lat_2=55,lat_0=50,lon_0=30.)
     m.bluemarble()
@@ -207,6 +202,31 @@ def projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radianc
     x, y = m(subset_longitude, subset_latitud)
     m.pcolormesh(x,y,data)
     plt.show()
+    
+    ########################################################################
+    data_test=data_radiances_38bands[1]
+    # Find middle location.
+    lat_m = np.nanmean(myd03_Latitude_data)
+    lon_m = np.nanmean(myd03_Longitude_data)
+
+    # Let's use ortho projection.
+    orth = ccrs.Orthographic(central_longitude=lon_m,
+                             central_latitude=lat_m,
+                             globe=None)
+    ax = plt.axes(projection=orth)
+
+    # Set global view. You can comment it out to get zoom-in view.
+    #ax.set_global()
+
+    # If you want to get global view, you need to subset.
+    p = plt.pcolormesh(myd03_Longitude_data[::5][::5],
+                       myd03_Latitude_data[::5][::5],
+                       data_test[::5][::5],
+                       transform=ccrs.PlateCarree())
+    ax.gridlines()
+    #ax.coastlines(resolution="110m")
+    cb = plt.colorbar(p)
+    cb.set_label(units, fontsize=8)
 
 
 
@@ -216,7 +236,7 @@ Function to calculate the reflectances values after mask the values and plot the
 def mask_refletances_values(sds_list,band_list,offset_list,scale_list,out_file):
     #reflectance_list= { 'reflectance_sds_250_RefSB': [], 'reflectance_sds_500_RefSB': [],'reflectance_sds_1_RefSB':[], 
     #            'reflectance_sds_1_Ems':[]}
-        attrs = sds_list['sds_250_RefSB'].attributes(full=1)
+    attrs = sds_list['sds_250_RefSB'].attributes(full=1)
     fva=attrs["_FillValue"]
     _FillValue = fva[0]
     vra=attrs["valid_range"]
@@ -251,9 +271,9 @@ def mask_refletances_values(sds_list,band_list,offset_list,scale_list,out_file):
                 reflectance_list['reflectance_'+x][band]=data
                 
                 n, bins, patches = axes[i].hist(data)
-                axes[i].set_title('Histrogram reflectances\n in channel %0.1f min: %0.1f max: %0.1f' %((band_list['band_'+x][band]),(data.min()),(data.max())))
+                axes[i].set_title('Histogram reflectances\n in channel %0.1f min: %0.1f max: %0.1f' %((band_list['band_'+x][band]),(data.min()),(data.max())))
                 
-                print(x,band,data.min(),data.max(),data.mean())
+                #print(x,band,data.min(),data.max(),data.mean())
 
                 i+=1
                 
@@ -315,13 +335,16 @@ def rgb_reflectances(sds_list,offset_list,scale_list,out_file):
     plt.savefig(out_file+"/modis_granule_rgb.png", bbox_inches='tight', dpi=100)
     plt.close()
 
-def save_data(name_file,array,out_file):
-    fileName=out_file + '/sample_'+name_file+'.MYD021KM.A2013122.1140.L1B.hdf' #https://clouds.eos.ubc.ca/~phil/courses/atsc301/coursebuild/html/modis_level1b_read.html
+def save_data(name_file,array,bands,out_file):
+    fileName=out_file + '/sample_'+name_file+'_MYD021KM.A2013122.1140.L1B.hdf' #https://clouds.eos.ubc.ca/~phil/courses/atsc301/coursebuild/html/modis_level1b_read.html
+    
     filehdf = SD(fileName, SDC.WRITE | SDC.CREATE)
 
     # Create a dataset
     sds = filehdf.create(name_file, SDC.FLOAT64, array.shape)
     print(np.shape(sds))
+    sds2 = filehdf.create("bands_radiances_38bands", SDC.FLOAT64, bands.shape)
+
     # Fill the dataset with a fill value
     sds.setfillvalue(0)
 
@@ -334,15 +357,24 @@ def save_data(name_file,array,out_file):
     # Assign an attribute to the dataset
     sds.units = "W/m^2/micron/sr"
 
+
+
     # Write data
     sds[:] = array
-    print(np.shape(sds))
+    sds2[:] = bands_radiances_38bands
+
+   # print(np.shape(sds))
 
     # Close the dataset
     sds.endaccess()
+    sds2.endaccess()
+
 
     # Flush and close the HDF file
     filehdf.end()
+
+
+
 
 def verify_copy(name_file,array,out_file):
     # Radiances dataset -all
@@ -353,12 +385,14 @@ def verify_copy(name_file,array,out_file):
     for idx,sds in enumerate(datasets_dict.keys()):
         print(idx,sds)
         
-    file2_data_subset = filehdf_sample_radiances.select(name_file) # select sds
+    file_data_sample = filehdf_sample_radiances.select(name_file) # select sds
+    file_values=file_data_sample.get()
+    file_values= np.ma.masked_array(file_values, np.isnan(file_values))
 
-    print(name_file, 'copied correctly',(array==file2_data_subset).all())   
+    print(name_file, 'copied correctly',(array==file_data_sample).all())   
 
-    print(file2_data_subset.get().max(),file2_data_subset.get().min())
-    print(array.max(),array.min())
+    print(name_file,"max and min:",file_values.max(),file_values.min())
+    print("Array values max and min:",array.max(),array.min())
 
     filehdf_sample_radiances.end()
 
@@ -377,8 +411,10 @@ def main():
    
     #os.chdir(fname_in)
     geo_file = fname_in+'/MYD03.A2013122.1140.061.2018046005026.hdf'
-    #print(geo_file)
+
+    ######################################################
    # Geo File #
+    print("geo_file")
     file_geo = SD(geo_file, SDC.READ)
     print("Reading MODIS LEVEL 1B + Geo File",geo_file)
     print(file_geo.info())
@@ -394,15 +430,16 @@ def main():
     myd03_Longitude_data = lon[:,:]
 
     #fig,ax = plt.subplots(1,1,figsize = (6,7))
-    ##ax.plot(myd03_Longitude_data[900:940,900:940],myd03_Latitude_data[900:940,900:940],'b+');
-    #ax.plot(myd03_Longitude_data,myd03_Latitude_data,'b+');
-    #ax.set(xlabel='longitude (deg W)',ylabel='latitude (deg N)');
+        ##ax.plot(myd03_Longitude_data[900:940,900:940],myd03_Latitude_data[900:940,900:940],'b+');
+        #ax.plot(myd03_Longitude_data,myd03_Latitude_data,'b+');
+        #ax.set(xlabel='longitude (deg W)',ylabel='latitude (deg N)');
         
     print ('lat min, max', myd03_Latitude_data.min(), myd03_Latitude_data.max())
     print ('lon min, max', myd03_Longitude_data.min(), myd03_Longitude_data.max())
 
-   # Radiances File #
-    # Read dataset.
+    ######################################################
+    print("MODIS_level1B")
+    
     modis_file = fname_in+'/MYD021KM.A2013122.1140.061.2018046032403.hdf'
     file = SD(modis_file, SDC.READ)
 
@@ -413,7 +450,9 @@ def main():
     for idx, sds in enumerate(datasets_dic.keys()):
         print(idx, sds)
 
+    ###############################
     # Read bands.
+    ###############################
     band_sds_250_RefSB = file.select('Band_250M')
     band_sds_500_RefSB = file.select('Band_500M')
     band_sds_1_RefSB = file.select('Band_1KM_RefSB')
@@ -426,7 +465,10 @@ def main():
         a=band_list[x].attributes()['long_name']
         print(f'modis {a}\n {band_list[x].get()}')  #get=values
 
+    ###############################
     # Read Radiances
+    ###############################
+    print("Reading the radiances")
     sds_250_RefSB = file.select('EV_250_Aggr1km_RefSB')
     sds_data_250_RefSB=sds_250_RefSB.get()  #values
     sds_500_RefSB = file.select('EV_500_Aggr1km_RefSB')
@@ -466,9 +508,13 @@ def main():
 
     #pprint.pprint ("Values scales  :" + str(dict(scale_list)))
 
+    ######################################################
     #### histogram
-    #histrogram_raw_plot(out_file,sds_list,band_list)
-    #raw_plot(out_file,sds_list,band_list)
+    print("MODIS_raw_histogram_by_channel plotting")
+    histrogram_raw_plot(out_file,sds_list,band_list)
+          
+    print("MODIS_raw_by_channel plotting")
+    raw_plot(out_file,sds_list,band_list)
 
     radiance_list= { 'radiance_sds_250_RefSB': [], 'radiance_sds_500_RefSB': [],'radiance_sds_1_RefSB':[], 
             'radiance_sds_1_Ems':[]}
@@ -476,37 +522,53 @@ def main():
     for x in sds_list.keys(): #for key, value in sds_list.items():
         radiance_list['radiance_'+x] = np.zeros(np.shape(sds_list[x]))
         print('radiance_'+x,np.shape(radiance_list['radiance_'+x] ))
-
+        
+    ######################################################
     ###radiance_list=radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list)
-
+    ###radiances_histogram(sds_list,band_list,radiance_list)
+          
     ### eliminate values out the range
+    print("Masking the radiance nan values and plotting histograms")
     radiance_list=mask_radiances_values(sds_list,band_list,offset_list,scale_list,radiance_list,out_file)
 
+    ######################################################
+    print("Concatenation of the data: radiances 38")
     data_radiances_38bands = np.concatenate((radiance_list['radiance_sds_250_RefSB'],radiance_list['radiance_sds_500_RefSB'],radiance_list['radiance_sds_1_RefSB'],radiance_list['radiance_sds_1_Ems']))
     data_radiances_38bands= np.ma.masked_array(data_radiances_38bands, np.isnan(data_radiances_38bands))
 
     bands_radiances_38bands = np.concatenate((band_list['band_sds_250_RefSB'],band_list['band_sds_500_RefSB'],band_list['band_sds_1_RefSB'],band_list['band_sds_1_Ems']))
     print('Ready_data_radiances_38bands',np.shape(data_radiances_38bands))
 
-    radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file)
+    print("Plotting of the radiances: radiances 38")
+    name_out ="/Only_valid_range_MODIS_radiances_by_channel.png"
+    radiances_plot(data_radiances_38bands,bands_radiances_38bands,name_out,out_file)
 
+    ######################################################
+    print("Concatenation of the subset data: radiances 38")
     #subset
     subset_data_radiances_38bands=data_radiances_38bands[:,1000:1600,400:1000]
     print(subset_data_radiances_38bands.shape)
+    
+    print("Plotting of the subset radiances: radiances 38")
+    name_out ="/Only_valid_range_MODIS_subset_radiances_by_channel.png"
+    radiances_plot(subset_data_radiances_38bands,bands_radiances_38bands,name_out,out_file)
 
     #projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radiances_38bands):
 
-    save_data("subset_radiances_38bands",subset_data_radiances_38bands,out_file)
-    save_data("radiances_38bands",data_radiances_38bands,out_file)
+    ######################################################
+    #Saving data
+    print("Saving the data")
+    save_data("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,bands_radiances_38bands,out_file)
+    save_data("Only_valid_range_radiances_38bands",data_radiances_38bands,bands_radiances_38bands,out_file)
 
-    verify_copy("subset_radiances_38bands",subset_data_radiances_38bands,out_file)
-    verify_copy("radiances_38bands",data_radiances_38bands,out_file)
+    verify_copy("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,out_file)
+    verify_copy("Only_valid_range_radiances_38bands",data_radiances_38bands,out_file)
 
-
+    ######################################################
+    print("Masking the nan reflectances values and plotting histograms")
     reflectance_list=mask_refletances_values(sds_list,band_list,offset_list,scale_list,out_file)
-    
-    histrogram_reflectances_plot(out_file,sds_list,band_list,reflectance_list)
-
+        
+    print("RGB reflectances plotting")
     rgb_reflectances(sds_list,offset_list,scale_list,out_file)
 
 
