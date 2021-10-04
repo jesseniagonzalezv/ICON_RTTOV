@@ -147,7 +147,7 @@ def radiances_histogram(sds_list,band_list,radiance_list):
     plt.close()
 
     
-def radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file):
+def radiances_plot(data_radiances_38bands,bands_radiances_38bands,name_out,out_file):
     fig,axes = plt.subplots(5,8,figsize = (30,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.15)
@@ -168,7 +168,7 @@ def radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file):
     fig.delaxes(axes[-1])
     fig.delaxes(axes[-2])
     plt.tight_layout()
-    fig.savefig(out_file+"/Only_valid_range_MODIS_radiances_by_channel.png")  
+    fig.savefig(out_file+name_out)  
     plt.close()
 
 
@@ -335,13 +335,16 @@ def rgb_reflectances(sds_list,offset_list,scale_list,out_file):
     plt.savefig(out_file+"/modis_granule_rgb.png", bbox_inches='tight', dpi=100)
     plt.close()
 
-def save_data(name_file,array,out_file):
+def save_data(name_file,array,bands,out_file):
     fileName=out_file + '/sample_'+name_file+'_MYD021KM.A2013122.1140.L1B.hdf' #https://clouds.eos.ubc.ca/~phil/courses/atsc301/coursebuild/html/modis_level1b_read.html
+    
     filehdf = SD(fileName, SDC.WRITE | SDC.CREATE)
 
     # Create a dataset
     sds = filehdf.create(name_file, SDC.FLOAT64, array.shape)
     print(np.shape(sds))
+    sds2 = filehdf.create("bands_radiances_38bands", SDC.FLOAT64, bands.shape)
+
     # Fill the dataset with a fill value
     sds.setfillvalue(0)
 
@@ -354,15 +357,24 @@ def save_data(name_file,array,out_file):
     # Assign an attribute to the dataset
     sds.units = "W/m^2/micron/sr"
 
+
+
     # Write data
     sds[:] = array
-    print(np.shape(sds))
+    sds2[:] = bands_radiances_38bands
+
+   # print(np.shape(sds))
 
     # Close the dataset
     sds.endaccess()
+    sds2.endaccess()
+
 
     # Flush and close the HDF file
     filehdf.end()
+
+
+
 
 def verify_copy(name_file,array,out_file):
     # Radiances dataset -all
@@ -528,21 +540,26 @@ def main():
     print('Ready_data_radiances_38bands',np.shape(data_radiances_38bands))
 
     print("Plotting of the radiances: radiances 38")
-    radiances_plot(data_radiances_38bands,bands_radiances_38bands,out_file)
+    name_out ="/Only_valid_range_MODIS_radiances_by_channel.png"
+    radiances_plot(data_radiances_38bands,bands_radiances_38bands,name_out,out_file)
 
     ######################################################
     print("Concatenation of the subset data: radiances 38")
     #subset
     subset_data_radiances_38bands=data_radiances_38bands[:,1000:1600,400:1000]
     print(subset_data_radiances_38bands.shape)
+    
+    print("Plotting of the subset radiances: radiances 38")
+    name_out ="/Only_valid_range_MODIS_subset_radiances_by_channel.png"
+    radiances_plot(subset_data_radiances_38bands,bands_radiances_38bands,name_out,out_file)
 
     #projection_plot(myd03_Latitude_data,myd03_Longitude_data,subset_data_radiances_38bands):
 
     ######################################################
     #Saving data
     print("Saving the data")
-    save_data("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,out_file)
-    save_data("Only_valid_range_radiances_38bands",data_radiances_38bands,out_file)
+    save_data("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,bands_radiances_38bands,out_file)
+    save_data("Only_valid_range_radiances_38bands",data_radiances_38bands,bands_radiances_38bands,out_file)
 
     verify_copy("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,out_file)
     verify_copy("Only_valid_range_radiances_38bands",data_radiances_38bands,out_file)
