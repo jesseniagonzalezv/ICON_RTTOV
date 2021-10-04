@@ -18,10 +18,10 @@ PROGRAM ML_RTTOV
 
   ! Parameters (for now)
   CHARACTER(LEN=256), PARAMETER :: &
-       fname_in= "/work/bb1036/b381362/dataset/subset_rttov_T12.nc", & !"/work/bb1036/b381362/dataset/data_rttov_T12.nc"  
+       fname_in= "/work/bb1036/b381362/dataset/data_rttov_T12.nc", & ! "/work/bb1036/b381362/dataset/subset_rttov_T12.nc""/work/bb1036/b381362/dataset/data_rttov_T12.nc"  
 
-       fname_out="/work/bb1036/b381362/output/output-subtest_rttov_T12.nc"   !"/work/bb1036/b381362/output/"  output-data_rttov_T12.nc
-  INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints=5369   , npoints_it=2000 ! 375193
+       fname_out="/work/bb1036/b381362/output/VF-data_rttov_T13.nc"   !"/work/bb1036/b381362/output/VF-subtest_rttov_T13.nc"  "/work/bb1036/b381362/output/"  output-data_rttov_T12.nc
+  INTEGER(KIND=4), PARAMETER :: Nlevels=150, Npoints= 375193 , npoints_it=2000 ! 5369 375193
   LOGICAL, PARAMETER :: flag_ret = .FALSE.
   
   ! Local variables
