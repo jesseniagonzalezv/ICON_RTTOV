@@ -576,7 +576,7 @@ def main():
     print("RGB reflectances plotting")
     rgb_reflectances(sds_list,offset_list,scale_list,out_file)
 
-
+    sys.stdout.close()
 
 if __name__ == '__main__':
     main()
