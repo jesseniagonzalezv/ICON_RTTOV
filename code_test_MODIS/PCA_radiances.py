@@ -132,7 +132,7 @@ def main():
     fname_in = args.path_in 
     out_file = args.path_out 
     
-    sys.stdout = open(out_file+'/output.txt','wt')
+    sys.stdout = open(out_file+'/log_PCA_radiances.txt','wt')
 
     # Read data
     modis_file = fname_in +args.name_input
@@ -196,8 +196,8 @@ def main():
     #X_reduced_test = pca.transform(scale(X_test))[:,:1]
 
 
-    
-    ic.disable()
+    sys.stdout.close()
+   # ic.disable()
     
 if __name__ == '__main__':
     main()
