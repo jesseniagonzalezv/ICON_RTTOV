@@ -12,6 +12,7 @@ from pyhdf.SD import SD, SDC
 import pprint
 #%matplotlib inline
 import argparse
+import sys
 
 # plottinh
 from mpl_toolkits.basemap import Basemap
@@ -335,8 +336,9 @@ def rgb_reflectances(sds_list,offset_list,scale_list,out_file):
     plt.savefig(out_file+"/modis_granule_rgb.png", bbox_inches='tight', dpi=100)
     plt.close()
 
+
 def save_data(name_file,array,bands,out_file):
-    fileName=out_file + '/sample_'+name_file+'_MYD021KM.A2013122.1140.L1B.hdf' #https://clouds.eos.ubc.ca/~phil/courses/atsc301/coursebuild/html/modis_level1b_read.html
+    fileName=out_file+name_file+'_MYD021KM.A2013122.1140.L1B.hdf' #https://clouds.eos.ubc.ca/~phil/courses/atsc301/coursebuild/html/modis_level1b_read.html
     
     filehdf = SD(fileName, SDC.WRITE | SDC.CREATE)
 
@@ -361,7 +363,7 @@ def save_data(name_file,array,bands,out_file):
 
     # Write data
     sds[:] = array
-    sds2[:] = bands_radiances_38bands
+    sds2[:] = bands
 
    # print(np.shape(sds))
 
@@ -378,7 +380,7 @@ def save_data(name_file,array,bands,out_file):
 
 def verify_copy(name_file,array,out_file):
     # Radiances dataset -all
-    modis_file = out_file + '/sample_'+name_file+".MYD021KM.A2013122.1140.L1B.hdf"
+    modis_file = out_file + name_file+"_MYD021KM.A2013122.1140.L1B.hdf"
     filehdf_sample_radiances = SD(modis_file, SDC.READ)
     datasets_dict = filehdf_sample_radiances.datasets()
 
@@ -396,19 +398,21 @@ def verify_copy(name_file,array,out_file):
 
     filehdf_sample_radiances.end()
 
-
+################################################################################################################################
 
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset', help='path of the dataset is')
-    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/dataset', help='path of the output data is' )
+    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/ouput', help='path of the output data is' )
     args = parser.parse_args()
 
     fname_in = args.path_in 
     out_file = args.path_out 
     
-   
+    
+    sys.stdout = open(out_file+'/log_MODIS_LEVEL1B.txt','wt')
+
     #os.chdir(fname_in)
     geo_file = fname_in+'/MYD03.A2013122.1140.061.2018046005026.hdf'
 
@@ -558,11 +562,12 @@ def main():
     ######################################################
     #Saving data
     print("Saving the data")
-    save_data("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,bands_radiances_38bands,out_file)
-    save_data("Only_valid_range_radiances_38bands",data_radiances_38bands,bands_radiances_38bands,out_file)
+    save_data("subset_radiances_38bands",subset_data_radiances_38bands,bands_radiances_38bands,out_file)
+    save_data("radiances_38bands",data_radiances_38bands,bands_radiances_38bands,out_file)
 
-    verify_copy("Only_valid_range_subset_radiances_38bands",subset_data_radiances_38bands,out_file)
-    verify_copy("Only_valid_range_radiances_38bands",data_radiances_38bands,out_file)
+    verify_copy("subset_radiances_38bands",subset_data_radiances_38bands,out_file)
+    verify_copy("radiances_38bands",data_radiances_38bands,out_file)
+    print("Ready saved data")
 
     ######################################################
     print("Masking the nan reflectances values and plotting histograms")
