@@ -122,7 +122,6 @@ def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/output', help='path of the dataset is')
-    arg('--dataset-file', type=str, default='VHR', help='resolution of the dataset VHR,HR' )
     arg('--name-input', type=str, default='/sample_subset_radiances_38bands_MYD021KM.A2013122.1140.L1B.hdf', help='name of the input file' )
     arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/ouput', help='path of the output data is' )
     arg('--n-pca', type=str, default=28, help='number of pca to be used' )
