@@ -17,6 +17,7 @@ def main():
 		fname = args.path_in 
 
 		ds=xr.open_dataset(fname)
+		ds['qnc'][:,:,:]=np.flip(ds['qnc'],0).values
 		ds['cli'][:,:,:]=np.flip(ds['cli'],0).values
 		ds['clw'][:,:,:]=np.flip(ds['clw'],0).values
 
