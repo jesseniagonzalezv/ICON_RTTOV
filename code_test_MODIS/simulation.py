@@ -8,6 +8,8 @@ from matplotlib import pyplot as plt
 import argparse
 import pandas as pd
 import netCDF4 #https://www.earthinversion.com/utilities/reading-NetCDF4-data-in-python/
+from mpl_toolkits.basemap import Basemap
+import matplotlib.cm as cm
 
 
 def plot_input_ICON(out_file,variable,path_ICON,dimension_variable,input_data="my_data"):
@@ -59,8 +61,8 @@ def plot_variable_RTTOV(ds_array, variable,out_file,input_data="my_data"):
     channels=np.shape(ds_array[variable])[0]
     print(channels)
     
+   
 
-        
     for col in range(channels):
             ax = axes[col]
             
@@ -70,8 +72,38 @@ def plot_variable_RTTOV(ds_array, variable,out_file,input_data="my_data"):
                 pcm=ds_array[variable].sel(chan=col).plot(ax=ax, cbar_kwargs={"label":label})
             elif(variable=="Y"):
                 label= '$Radiances/(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$'
-                pcm=ds_array[variable].sel(chan=col).plot(ax=ax, cbar_kwargs={"label":label}) #vmin=0, ,  vmax=10 vmax=600,
-      
+
+                #pcm=ds_array[variable][col].plot(ax=ax, cbar_kwargs={"label":label})  #vmin=0, vmax=1000,  
+                map = Basemap(projection='merc',llcrnrlon=4.5,llcrnrlat=47.8,urcrnrlon=14.5,urcrnrlat=54.5,resolution='f',ax=ax) #Germany
+                map.drawcoastlines()
+                map.drawcountries()
+                map.drawstates()
+                map.drawparallels(np.arange(-90.,91.,1.),labels=[1,0,0,1],fontsize=10)
+                map.drawmeridians(np.arange(-180.,181.,2.),labels=[1,0,0,1],fontsize=10)
+
+                lat = ds_array['lat']
+                lon = ds_array['lon']
+
+                lons,lats = np.meshgrid(lon,lat)
+                x,y = map(lons,lats)
+
+                levels = np.linspace(270,300,num=31) #???
+                extend = 'both' #min,max,both,neither
+                cmap=plt.get_cmap('jet') #du bleu au rouge
+                label= '$Radiances/(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$'
+                cs = map.contourf(x,y,ds_array[variable][col],levels,extend=extend,cmap=cmap)  
+                
+                # generate the colorbar
+#                 norm= cm.colors.Normalize(vmin=ds_array[variable][col].min(), vmax=ds_array[variable][col].max(), clip=False)
+#                 SM = cm.ScalarMappable(norm=norm, cmap='bwr')
+#                 SM.set_array([])
+#                 cbar = fig.colorbar(SM, ax=ax)
+                
+
+                cbar = fig.colorbar(cs, ax=ax,label='Radiance [mW/m2/sr/cm-1]') #location="right",pad="5%",ticks=[270,275,280,285,290,295,300],
+                #cbar.ax.tick_params(size=0,labelsize=12)
+#                 cbar.set_label('Radiance [mW/m2/sr/cm-1]',size=15)
+
             ax.set_title('Channel %d'% (col+1))
     
     #plt.show()
@@ -102,8 +134,12 @@ def output_RTTOV(out_file,variable,path_OUTPUT_RTTOV,input_data="my_data"):
     print("number of bands",n_bands)
 
     
-#     pd.set_option('display.float_format', lambda x: '%.4f' % x)
-#     pd.set_option('display.max_columns', None)
+        #plot figure 
+    plot_variable_RTTOV(ds_array=ds, variable=variable,out_file=out_file,input_data=input_data)
+    
+    print("ok plot")
+    pd.set_option('display.float_format', lambda x: '%.4f' % x)
+    pd.set_option('display.max_columns', None)
 
 
 
@@ -122,8 +158,7 @@ def output_RTTOV(out_file,variable,path_OUTPUT_RTTOV,input_data="my_data"):
     variable_df.describe().to_csv(out_file+ "/"+ input_data+ "_"+variable+"_description.csv")       
     
     print("ok dataframe")
-    #plot figure 
-    plot_variable_RTTOV(ds_array=ds, variable=variable,out_file=out_file,input_data=input_data)
+
         
      
 

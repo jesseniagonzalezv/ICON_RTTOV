@@ -41,9 +41,16 @@ python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github
 
 python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-converter-32-33-34.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-converted-rad-32-33-34-y' --type-simulation 'radiances'
 
-python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-converter-29-30-32-33-34.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-converted-rad-29-30-32-33-34-y' --type-simulation 'radiances'
 
 python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-converter-28-35-36.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-converted-rad-28-35-36' --type-simulation 'radiances'
+
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/VF-output-test-modis-T12.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'VF-output-test-modis-T12' --type-simulation 'radiances'
+
+###input alexandre
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-msg-alex.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-msg-alex.nc' --type-simulation 'radiances'
+
+
+
 
 # '''
 # python simulation.py --path-ICON '/home/jvillarreal/Documents/phd/dataset/subset_rttov_T12_old.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'subset-data--old' --variable-input 'clc' --dimension-variable 3 
