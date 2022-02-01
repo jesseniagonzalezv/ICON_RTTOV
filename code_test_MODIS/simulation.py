@@ -10,7 +10,7 @@ import pandas as pd
 import netCDF4 #https://www.earthinversion.com/utilities/reading-NetCDF4-data-in-python/
 from mpl_toolkits.basemap import Basemap
 import matplotlib.cm as cm
-
+from matplotlib.ticker import MaxNLocator
 
 def plot_input_ICON(out_file,variable,path_ICON,dimension_variable,input_data="my_data"):
     '''
@@ -53,18 +53,19 @@ def plot_input_ICON(out_file,variable,path_ICON,dimension_variable,input_data="m
 
 
 
-def plot_variable_RTTOV(ds_array, variable,out_file,input_data="my_data"):
+def plot_variable_RTTOV(ds_array,bands, variable,out_file,input_data="my_data"):
     fig,axes = plt.subplots(5,8,figsize = (32,20))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
 
-    channels=np.shape(ds_array[variable])[0]
-    print(channels)
+    n_bands=np.shape(ds_array[variable])[0]
+    print(n_bands)
     
+
    
 
-    for col in range(channels):
-            ax = axes[col]
+    for i in range(n_bands):
+            ax = axes[i]
             
             
             if(variable=="brdf"):
@@ -87,11 +88,21 @@ def plot_variable_RTTOV(ds_array, variable,out_file,input_data="my_data"):
                 lons,lats = np.meshgrid(lon,lat)
                 x,y = map(lons,lats)
 
-                levels = np.linspace(270,300,num=31) #???
+                y_filtered = ds_array[variable][i]  #(chan, lat, lon) #check it when it is nan or inf np.ma.masked_where((ds_array[variable][col]< 2000), ds_array[variable][col])                
+                
+                #print(np.min(y_filtered), np.max(y_filtered))
+                #levels = np.linspace(270,300,num=31) #???
+                #levels = np.linspace(np.min(y_filtered), np.max(y_filtered), 30)  
+                levels = MaxNLocator(nbins=15).tick_values(np.min(y_filtered), np.max(y_filtered))
+
                 extend = 'both' #min,max,both,neither
                 cmap=plt.get_cmap('jet') #du bleu au rouge
                 label= '$Radiances/(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$'
-                cs = map.contourf(x,y,ds_array[variable][col],levels,extend=extend,cmap=cmap)  
+                
+
+
+                cs = map.contourf(x,y, y_filtered,levels,extend=extend,cmap=cmap)  
+                #cs = map.contourf(x,y, y_filtered,extend=extend,cmap=cmap)  
                 
                 # generate the colorbar
 #                 norm= cm.colors.Normalize(vmin=ds_array[variable][col].min(), vmax=ds_array[variable][col].max(), clip=False)
@@ -100,11 +111,13 @@ def plot_variable_RTTOV(ds_array, variable,out_file,input_data="my_data"):
 #                 cbar = fig.colorbar(SM, ax=ax)
                 
 
-                cbar = fig.colorbar(cs, ax=ax,label='Radiance [mW/m2/sr/cm-1]') #location="right",pad="5%",ticks=[270,275,280,285,290,295,300],
-                #cbar.ax.tick_params(size=0,labelsize=12)
+                cbar = fig.colorbar(cs, ax=ax,label='Radiance $(W\,m^{-2}\,sr^{-1}\,\mu m^{-1})$',shrink=0.75) #location="right",pad="5%",ticks=[270,275,280,285,290,295,300],
+                cbar.ax.tick_params(size=0,labelsize=10)
 #                 cbar.set_label('Radiance [mW/m2/sr/cm-1]',size=15)
 
-            ax.set_title('Channel %d'% (col+1))
+            ax.set_title('Channel %d'% (bands[i]))
+            ax.set_xlabel('Longitud', labelpad=12,fontsize=10)
+            ax.set_ylabel('Latitud', labelpad=26,fontsize=10)
     
     #plt.show()
 
@@ -130,12 +143,13 @@ def output_RTTOV(out_file,variable,path_OUTPUT_RTTOV,input_data="my_data"):
     #BRDF_flated = .reshape(-1,)
     nlat = len(ds['lat'])
     nlon = len(ds['lon'])
-    n_bands =len(ds['chan'])
+    n_bands = len(ds['chan'])
+    bands = ds['chan']
     print("number of bands",n_bands)
 
     
         #plot figure 
-    plot_variable_RTTOV(ds_array=ds, variable=variable,out_file=out_file,input_data=input_data)
+    plot_variable_RTTOV(ds_array=ds,bands=bands, variable=variable,out_file=out_file,input_data=input_data)
     
     print("ok plot")
     pd.set_option('display.float_format', lambda x: '%.4f' % x)
@@ -149,11 +163,20 @@ def output_RTTOV(out_file,variable,path_OUTPUT_RTTOV,input_data="my_data"):
     variable_df = pd.DataFrame(variable_flated)
     #variable_df.describe()
 
-    for i in range((n_bands)-1):
-        count_nan = variable_df[i].isnull().sum()
-        print (i,'Count of NaN: ' + str(count_nan))    
+    for i in range((n_bands)):
+        count_nan = variable_df[i].isnull().sum()       
+        print (i,'Count of NaN: ' + str(count_nan))  
+
+        m4 = variable_df[i].isin([np.inf, -np.inf]).values.sum()  
+        print (i,'Count of inf(replaced with nan): ' + str(m4))  
+                
+        variable_df[i].replace([np.inf, -np.inf], np.nan, inplace = True)
+        count_nan = variable_df[i].isnull().sum()       
+        print (i,'Count of NaN: ' + str(count_nan))  
+        
+        
     pd.set_option('display.float_format', lambda x: '%.3f' % x)
-    
+    variable_df.columns= bands
 
     variable_df.describe().to_csv(out_file+ "/"+ input_data+ "_"+variable+"_description.csv")       
     
