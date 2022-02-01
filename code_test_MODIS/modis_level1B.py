@@ -160,7 +160,7 @@ def radiances_plot(data_radiances_38bands,bands_radiances_38bands,name_out,out_f
 
         cbar=fig.colorbar(pcm, ax=axes[i])
         cbar.ax.get_yaxis().labelpad = 15
-        cbar.set_label('$(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$ \n \n', rotation=270)
+        cbar.set_label('$(W\,m^{-2}\,sr^{-1}\,\mu m^{-1})$ \n \n', rotation=270)
 
         #out2=cax.ax.set_ylabel('$(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$ \n \n')
         #out2.set_rotation(270)
