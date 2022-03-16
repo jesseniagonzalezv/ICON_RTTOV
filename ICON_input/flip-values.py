@@ -17,19 +17,19 @@ def main():
 		fname = args.path_in 
 
 		ds=xr.open_dataset(fname)
-		ds['qnc'][:,:,:]=np.flip(ds['qnc'],0).values
-		ds['cli'][:,:,:]=np.flip(ds['cli'],0).values
-		ds['clw'][:,:,:]=np.flip(ds['clw'],0).values
+		ds['qnc'][:,:,:]=ds['qnc'] #np.flip(ds['qnc'],0).values
+		ds['cli'][:,:,:]=ds['cli'] #np.flip(ds['cli'],0).values
+		ds['clw'][:,:,:]=ds['clw'] #np.flip(ds['clw'],0).values
 
 		#print(ds['clc'][:,149,149])
-		ds['clc'][:,:,:]=(np.flip(ds['clc'],0).values)/100
+		ds['clc'][:,:,:]=ds['clc']/100 #(np.flip(ds['clc'],0).values)/100
 		#print(ds['clc'][:,149,149])
 
-		ds['hus'][:,:,:]=np.flip(ds['hus'],0).values
-		ds['qr'][:,:,:]=np.flip(ds['qr'],0).values
-		ds['qs'][:,:,:]=np.flip(ds['qs'],0).values
-		ds['pres'][:,:,:]=np.flip(ds['pres'],0).values
-		ds['ta'][:,:,:]=np.flip(ds['ta'],0).values
+		ds['hus'][:,:,:]=ds['hus'] #np.flip(ds['hus'],0).values
+		ds['qr'][:,:,:]=ds['qr'] #np.flip(ds['qr'],0).values
+		ds['qs'][:,:,:]=ds['qs'] #np.flip(ds['qs'],0).values
+		ds['pres'][:,:,:]=ds['pres']#np.flip(ds['pres'],0).values
+		ds['ta'][:,:,:]=ds['ta'] #np.flip(ds['ta'],0).values
 
 		ds.to_netcdf( args.path_out)  #'/work/bb1036/b381362/dataset/3D_mod.nc') # rewrite to netcdf
 

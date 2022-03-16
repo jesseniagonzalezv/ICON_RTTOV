@@ -56,7 +56,7 @@ ncwa -a time $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov
 rm $path_data_out/$fout3d_1
 echo 3D generated
 
-
+COMMENT1
 echo -----------flip and verify---------
 python flip-values.py --path-in $path_data_out/$fout3d_rttov --path-out $path_data_out/$fout3d_rttov_flip
 python verify_data.py --path-data-in $path_data_in/$fname3d_in  --path-data-copied $path_data_out/$fout3d_rttov_flip --type-data '3D'
@@ -72,16 +72,16 @@ cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,v_10m,u_10m,t_s,ps $path_
 
 
 echo ---------------------- 2D LWP----------------
-cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,clwvi $path_data_in/$fname2d_lwp $path_data_out/$fout2d_lwp 
+cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,clwvi,clt,cct $path_data_in/$fname2d_lwp $path_data_out/$fout2d_lwp 
 
 
 echo ready 2d lwp
 cdo -O -f nc merge $path_data_out/$fout2d_lwp $path_data_out/$fout2d_1 $path_data_out/$fout2d_name\_2D.nc
 
 echo ready merge
-COMMENT1
+
  
-cdo -seltimestep,$seltimestep_2D -selvar,v_10m,u_10m,t_s,ps,clwvi $path_data_out/2d_surface_day_DOM03_ML_20130502T120000Z_2D.nc $path_data_out/$fout2d_2 
+cdo -seltimestep,$seltimestep_2D -selvar,v_10m,u_10m,t_s,ps,clwvi,clt,cct $path_data_out/2d_surface_day_DOM03_ML_20130502T120000Z_2D.nc $path_data_out/$fout2d_2 
 
 echo ready seltime
 
@@ -125,6 +125,7 @@ python verify_data.py --path-data-in $path_data_in/$fout2d_1  --path-data-copied
 python verify_data.py --path-data-in $fout_surface  --path-data-copied $path_data_out/data_rttov_T12.nc --type-data 'surface'
 rm $fout_surface
 
+ncks -C -O -x -v height_bnds $path_data_out/data_rttov_T12.nc $path_data_out/data_rttov_T12.nc
 
 echo --------------------------subset-----------------------------------
 ncks -d lon,5.,6. -d lat,48.,50.  $path_data_out/data_rttov_T12.nc $path_data_out/subset_rttov_T12.nc #Npoint=182*59=10738
