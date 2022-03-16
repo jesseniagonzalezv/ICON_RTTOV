@@ -45,6 +45,8 @@ def main():
     lon.standard_name = "longitude" 
     lon.long_name = 'longitude'
     lon.axis = "X"
+    
+    #######why is it needed? 
 
     height = ncfile.createVariable('height', np.float64, ('height'))
     height.standard_name = "height"
@@ -87,10 +89,12 @@ def main():
 
     height_bnds[:,:]=ds['height_bnds'][1:,:]
 
-    #Z_ifc[:,:,:]=ds['z_ifc'][1:,:,:]
-    Z_ifc[:,:,:]=ds['z_ifc'][:0:-1,:,:]
 
-    Z_mc[:,:,:]=ds['z_mc'][::-1,:,:]
+    #Z_ifc[:,:,:]=ds['z_ifc'][:0:-1,:,:]
+    Z_ifc[:,:,:]=ds['z_ifc'][1:,:,:]
+
+    #Z_mc[:,:,:]=ds['z_mc'][::-1,:,:]
+    Z_mc[:,:,:]=ds['z_mc'][:,:,:]
 
     Topography_c[:,:]=ds['topography_c']
 
