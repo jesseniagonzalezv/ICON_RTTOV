@@ -64,6 +64,25 @@ python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github
 
 python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-1-to-7-test.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-msg-1-to-7-test' --type-simulation 'radiances'
 
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-20-to-26-test.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-msg-20-to-26-test' --type-simulation 'radiances'
+
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-1-to-7-test_without_reff.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-msg-1-to-7-test_without_reff' --type-simulation 'radiances'
+
+
+
+#### data-rttov data created with the ICON LEM
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-data-icon-30-to-31.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-data-icon-30-to-31.nc' --type-simulation 'radiances'
+
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-data-icon-1to3-26-33to35.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-data-icon-1to3-26-33to35.nc' --type-simulation 'radiances'
+
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-data-icon-20-23-27-30to34-36.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-data-icon-20-23-27-30to34-36.nc' --type-simulation 'radiances'
+
+
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-1-20-test-new-values.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-msg-1-20-test-new-values.nc' --type-simulation 'radiances'
+
+
+
+
 
 ###input alexandre
 #python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-msg-alex.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-msg-alex.nc' --type-simulation 'radiances'
