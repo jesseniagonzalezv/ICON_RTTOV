@@ -71,8 +71,7 @@ def plot_variable_RTTOV(ds_array,bands, variable,out_file,input_data="my_data"):
             if(variable=="brdf"):
                 label='BRDF/unitless'
                 pcm=ds_array[variable].sel(chan=col).plot(ax=ax, cbar_kwargs={"label":label})
-            elif(variable=="Y"):
-                label= '$Radiances/(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$'
+            elif(variable=="Y" or variable =="Y_clear"):
 
                 #pcm=ds_array[variable][col].plot(ax=ax, cbar_kwargs={"label":label})  #vmin=0, vmax=1000,  
                 map = Basemap(projection='merc',llcrnrlon=4.5,llcrnrlat=47.8,urcrnrlon=14.5,urcrnrlat=54.5,resolution='f',ax=ax) #Germany
@@ -93,11 +92,12 @@ def plot_variable_RTTOV(ds_array,bands, variable,out_file,input_data="my_data"):
                 #print(np.min(y_filtered), np.max(y_filtered))
                 #levels = np.linspace(270,300,num=31) #???
                 #levels = np.linspace(np.min(y_filtered), np.max(y_filtered), 30)  
-                levels = MaxNLocator(nbins=15).tick_values(np.min(y_filtered), np.max(y_filtered))
+                levels = MaxNLocator(nbins=15).tick_values(np.nanmin(y_filtered),np.nanmax(y_filtered))
 
+                # levels = MaxNLocator(nbins=15).tick_values(np.min(y_filtered), np.max(y_filtered))
+                print(levels.max(), levels.min())
                 extend = 'both' #min,max,both,neither
                 cmap=plt.get_cmap('jet') #du bleu au rouge
-                label= '$Radiances/(W\,m^{-2}\,\mu m^{-1}\,sr^{-1})$'
                 
 
 
@@ -111,7 +111,7 @@ def plot_variable_RTTOV(ds_array,bands, variable,out_file,input_data="my_data"):
 #                 cbar = fig.colorbar(SM, ax=ax)
                 
 
-                cbar = fig.colorbar(cs, ax=ax,label='Radiance $(W\,m^{-2}\,sr^{-1}\,\mu m^{-1})$',shrink=0.75) #location="right",pad="5%",ticks=[270,275,280,285,290,295,300],
+                cbar = fig.colorbar(cs, ax=ax,label='Radiance $(W\,m^{-2}\,sr^{-1}\,\mu m^{-1})$')#,shrink=0.75) #location="right",pad="5%",ticks=[270,275,280,285,290,295,300],
                 cbar.ax.tick_params(size=0,labelsize=10)
 #                 cbar.set_label('Radiance [mW/m2/sr/cm-1]',size=15)
 
@@ -223,7 +223,9 @@ def main():
         plot_input_ICON(out_file=path_output,variable=variable_input, path_ICON=path_ICON, dimension_variable=dimension_variable, input_data=input_data)
         
     else:
-        output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)
+    
+        output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)  
+        output_RTTOV(out_file=path_output,variable='Y_clear',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)
         #output_RTTOV(out_file=path_output,variable='brdf',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)
 
 
