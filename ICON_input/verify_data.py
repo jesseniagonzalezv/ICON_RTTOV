@@ -34,7 +34,7 @@ def main():
       for v in ds_variables:
         #if (v != ('time') and v !=('height_bnds')): 
         if(v== ('qnc') or v == ('cli') or v == ('clw') or v == ('hus') or v == ('qr') or v == ('qs') or v == ('pres') or v == ('ta') ):       	 
-          #print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),::-1,:,:],ds_1timestep[v].values[:,:,:]))
+          #print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),::-1,:,:],ds_1timestep[v].values[:,:,:])) #when the inpiut was flipped
           print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),:,:,:],ds_1timestep[v].values[:,:,:]))
           
         elif(v == ('clc')):
@@ -43,7 +43,7 @@ def main():
     elif(args.type_data == '2D'):
       print('Verifing copied data_2D')
       for v in ds_variables:        
-        if (v == ('u_10m') or v ==('v_10m')): 
+        if (v == ('u_10m') or v ==('v_10m') or v ==('huss') or v ==('tas')): 
           print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),0,:,:],ds_1timestep[v].values[:,:]))
           	    		
         elif(v == ('ps') or v ==('t_s') ):
