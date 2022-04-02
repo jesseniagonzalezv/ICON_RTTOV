@@ -11,7 +11,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
-def visulize_sat(variable, band, lat, lon, title_subplot, map_limit, fig,ax):
+def visulize_sat(variable, band, lat, lon, title_subplot, map_limit, fig, ax, max_colorbar, min_colorbar):
 
     #axes = axes.ravel()
         cbar_label = 'Radiance $(W\,m^{-2}\,sr^{-1}\,\mu m^{-1})$'
@@ -43,11 +43,13 @@ def visulize_sat(variable, band, lat, lon, title_subplot, map_limit, fig,ax):
 
         pprint.pprint(data)
 
-        extend = 'both' #min,max,both,neither
+        #extend = 'both' #min,max,both,neither
         cmap=plt.get_cmap('jet') #du bleu au rouge
                         
         #cs = map.contourf(x,y, y_filtered,levels,extend=extend,cmap=cmap) 
-        cs = map.pcolormesh(x,y,data, cmap=cmap,shading='auto')
+
+        print('PLOT colobar min and max', min_colorbar, max_colorbar)
+        cs = map.pcolormesh(x,y,data, cmap=cmap,shading='auto', vmin = min_colorbar, vmax = max_colorbar)
     
         cbar = fig.colorbar(cs, ax=ax,label=cbar_label,shrink=0.75) #location="right",pad="5%",ticks=[270,275,280,285,290,295,300],
         cbar.ax.tick_params(size=0,labelsize=10)
@@ -91,16 +93,19 @@ def main():
     rttov_lat = rttov_ds['lat'].values
     rttov_lon = rttov_ds['lon'].values
     n_bands = len(MODIS_bands)*2 #np.size(bands)
-    ncols = 2 #
+    #ncols = 2 #
+    nrows = 2 #
     print(n_bands)
 
-    nrows = n_bands // ncols + (n_bands % ncols > 0) #tbn pujede ser entrada
+    #nrows = n_bands // ncols + (n_bands % ncols > 0) #tbn pujede ser entrada
+    ncols = n_bands // nrows + (n_bands % nrows > 0) #tbn pujede ser entrada
+
     fig = plt.figure(figsize=(5*ncols, 5*nrows))   
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
 
-    position =list(range(1,n_bands+1))
-    position_rttov = position[::2]
-    positon_MODIS = position[1::2]
+    position =list(range(1,n_bands+1)) #[1:76]
+    position_rttov = position[:39] #position[::2]
+    position_MODIS = position[38:] #[1::2]
     
 
     figure_name = 'MODIS and RTTOV output radiances' #aca pasarr con todo path
@@ -113,19 +118,26 @@ def main():
 
     for i in range(len(MODIS_bands)): 
     #for i in range(2):
+        bnd=MODIS_bands[i].astype(int) # hacer que cuando sea igual al indice seleccionar ese cuando la dim chan ==i
+
+        min_colorbar = np.min([np.min(MODIS_variable[i]), np.min(rttov_variable[bnd-1])])
+        max_colorbar = np.max([np.max(MODIS_variable[i]), np.max(rttov_variable[bnd-1])])
+        # print('============modis colobar min and max',np.min(MODIS_variable[i]))
+        # print('============rttov colobar min and max', np.min(rttov_variable[bnd-1]))
+
+        # print('============code colobar min and max', min_colorbar, max_colorbar)
 
         variable = MODIS_variable[i]
-        position =positon_MODIS[i]
+        position =position_MODIS[i]
         title_subplot= "MODIS (11:40/2/5/2013)-Channel:"
         ax = plt.subplot(nrows, ncols, position)
-        visulize_sat(variable, MODIS_bands[i], MODIS_lat, MODIS_lon, title_subplot, map_boundaries, fig, ax)
+        visulize_sat(variable, MODIS_bands[i], MODIS_lat, MODIS_lon, title_subplot, map_boundaries, fig, ax,min_colorbar, max_colorbar)
 
-        bnd=MODIS_bands[i].astype(int) # hacer que cuando sea igual al indice seleccionar ese cuando la dim chan ==i
-        variable = rttov_variable[bnd-1]
-        position =position_rttov[i]
+        variable = rttov_variable[bnd-1] #bnd=1-36 
         title_subplot= "RTTOV (12:30/2/5/2013)-Channel:"
+        position = position_rttov[i] #position+38
         ax = plt.subplot(nrows, ncols, position)
-        visulize_sat(variable, rttov_bands[bnd-1], rttov_lat, rttov_lon, title_subplot, map_boundaries, fig, ax)
+        visulize_sat(variable, rttov_bands[bnd-1], rttov_lat, rttov_lon, title_subplot, map_boundaries, fig, ax, min_colorbar, max_colorbar)
 
 
 

@@ -1,4 +1,4 @@
-(modis) jvillarreal@jvillarreal-HP-EliteBook-830-G7-Notebook-PC:~/Documents/phd/dataset$ ncdump -h data_rttov_T12.nc 
+b381362@mistralpp1% ncdump -h data_rttov_T12.nc 
 netcdf data_rttov_T12 {
 dimensions:
 	lat = 637 ;
@@ -37,13 +37,6 @@ variables:
 		cli:missing_value = NaNf ;
 		cli:cell_methods = "time: mean" ;
 		cli:institution = "MPIMET" ;
-	float clt(lat, lon) ;
-		clt:standard_name = "clct" ;
-		clt:long_name = "total cloud cover" ;
-		clt:units = "%" ;
-		clt:param = "1.6.0" ;
-		clt:cell_methods = "time: mean" ;
-		clt:institution = "MPIMET" ;
 	float clw(height, lat, lon) ;
 		clw:standard_name = "qc" ;
 		clw:long_name = "specific_cloud_water_content" ;
@@ -74,6 +67,13 @@ variables:
 		hus:missing_value = NaNf ;
 		hus:cell_methods = "time: mean" ;
 		hus:institution = "MPIMET" ;
+	float huss(lat, lon) ;
+		huss:standard_name = "qv_2m" ;
+		huss:long_name = "specific water vapor content in 2m" ;
+		huss:units = "kg kg-1" ;
+		huss:param = "0.1.0" ;
+		huss:cell_methods = "time, height: mean" ;
+		huss:institution = "MPIMET" ;
 	double lat(lat) ;
 		lat:standard_name = "latitude" ;
 		lat:long_name = "latitude" ;
@@ -143,6 +143,13 @@ variables:
 		ta:missing_value = NaNf ;
 		ta:cell_methods = "time: mean" ;
 		ta:institution = "MPIMET" ;
+	float tas(lat, lon) ;
+		tas:standard_name = "t_2m" ;
+		tas:long_name = "temperature in 2m" ;
+		tas:units = "K" ;
+		tas:param = "0.0.0" ;
+		tas:cell_methods = "time, height: mean" ;
+		tas:institution = "MPIMET" ;
 	float topography_c(lat, lon) ;
 		topography_c:standard_name = "surface_height" ;
 		topography_c:long_name = "geometric height of the earths surface above sea level" ;
@@ -178,9 +185,8 @@ variables:
 		:Conventions = "CF-1.4" ;
 		:uuidOfVGrid = "3be5ac35-92f4-4e91-7418-b62336222e20" ;
 		:title = "ICON simulation" ;
-		:history = "Mon Mar 14 12:53:17 2022: ncks -C -O -x -v height_bnds data_rttov_T12.nc data_rttov_T12.nc\n",
-			"Mon Mar 14 12:50:26 2022: ncwa -a bnds data_rttov_T12.nc data_rttov_T12.nc\n",
-			"Mon Mar 14 12:39:02 2022: cdo -O -f nc merge /work/bb1036/b381362/dataset/3d_coarse_day_ll_DOM03_ML_20130502T120000Z_1timestep_rttov_flip.nc /work/bb1036/b381362/dataset/2d_surface_day_DOM03_ML_20130502T120000Z_1timestep_rttov.nc /work/bb1036/b381362/dataset/landmask_R0156m_rttov.nc /work/bb1036/b381362/dataset/surface_DOM03_rttov.nc /work/bb1036/b381362/dataset/data_rttov_T12.nc\n",
+		:history = "Thu Mar 31 16:34:41 2022: ncks -C -O -x -v height_bnds /work/bb1036/b381362/dataset/data_rttov_T12.nc /work/bb1036/b381362/dataset/data_rttov_T12.nc\n",
+			"Thu Mar 31 16:32:30 2022: cdo -O -f nc merge /work/bb1036/b381362/dataset/3d_coarse_day_ll_DOM03_ML_20130502T120000Z_1timestep_rttov_flip.nc /work/bb1036/b381362/dataset/2d_surface_day_DOM03_ML_20130502T120000Z_1timestep_rttov.nc /work/bb1036/b381362/dataset/landmask_R0156m_rttov.nc /work/bb1036/b381362/dataset/surface_DOM03_rttov.nc /work/bb1036/b381362/dataset/data_rttov_T12.nc\n",
 			"Mon Mar 14 12:12:17 2022: ncwa -a time /work/bb1036/b381362/dataset/3d_coarse_day_ll_DOM03_ML_20130502T120000Z_1timestep.nc /work/bb1036/b381362/dataset/3d_coarse_day_ll_DOM03_ML_20130502T120000Z_1timestep_rttov.nc\n",
 			"Mon Mar 14 12:08:37 2022: cdo -seltimestep,7 -selvar,qnc,cli,clw,clc,hus,qr,qs,pres,ta /work/bb1036/b381362/dataset/3d_coarse_day_ll_DOM03_ML_20130502T120000Z.nc /work/bb1036/b381362/dataset/3d_coarse_day_ll_DOM03_ML_20130502T120000Z_1timestep.nc\n",
 			"/work/bm0834/k203095/icon-lem-alpha/icon-lem-readccn/build/x86_64-unknown-linux-gnu/bin/icon at 20181009 183042" ;
