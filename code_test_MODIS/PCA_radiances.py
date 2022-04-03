@@ -114,16 +114,49 @@ def reconstruction_img(X_reduced,pca,img_shape,n_bands):
     ###only to visualize the image reduced show is really close to the original
     print("shape image reconstructed",X_img_reduced.shape)
     return X_img_reduced
-#########################################################################
 
 
- 
+def dataframe_csv(variable, colum, out_file):
+  ### input (a,b,c) a will be the columns of the dataframe
+  # datafram  row = b*c, colum = a  
+    print('dataframe', np.shape(colum), np.shape(variable))
+    X_flated = variable.transpose(1,2,0).reshape(-1,variable.shape[0]) # 
+    
+    print(np.shape(X_flated))
+    df=pd.DataFrame(X_flated) 
+    
+    
+    for i in range(len(colum)):
+        count_nan = df[i].isnull().sum()
+        print ('In band {} values NaN: {}'.format(colum[i], count_nan))  
+
+    ic("Before drop", df.shape)  
+    ic(df.count()) 
+    
+    df_after_drop=df.dropna( how = 'any' ) # subset = [1],‘any’ : If any NA values are present, drop that row or column.
+
+    ic("After the drop",df_after_drop.shape)  
+    ic(df_after_drop.count()) 
+    
+    
+    pd.set_option('display.float_format', lambda x: '%.1f' % x)
+    df.columns= colum
+    
+    df.describe().to_csv(out_file + "radiances_description.csv")    
+    print("ok dataframe")
+    
+    return df_after_drop
+        
+    #df_after_drop= df.drop([8,9,10,11,12,13,14,15,16,17], axis=1)
+    #df_after_drop=df_after_drop.dropna( subset = [1,5,7,18,37], how = 'any' )
+    #ic(df_after_drop.count())  
+
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/output', help='path of the dataset is')
-    arg('--name-input', type=str, default='/sample_subset_radiances_38bands_MYD021KM.A2013122.1140.L1B.hdf', help='name of the input file' )
-    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/ouput', help='path of the output data is' )
+    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/', help='path of the dataset is')
+    arg('--name-input', type=str, default='rttov-13-data-icon-1-to-36-not-flip.nc', help='name of the input file' )
+    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/output', help='path of the output data is' )
     arg('--n-pca', type=str, default=28, help='number of pca to be used' )
 
     args = parser.parse_args()
@@ -134,18 +167,18 @@ def main():
     sys.stdout = open(out_file+'/log_PCA_radiances.txt','wt')
 
     # Read data
-    modis_file = fname_in +args.name_input
-    ic(modis_file)
-    filehdf = SD(modis_file, SDC.READ)
+    name_file = fname_in +args.name_input
+    ic(name_file)
+    filehdf = SD(name_file, SDC.READ)
     datasets_dict = filehdf.datasets()
 
     for idx,sds in enumerate(datasets_dict.keys()):
         ic(idx,sds)
         
-    sds_radiances = filehdf.select('subset_radiances_38bands')
+    sds_radiances = filehdf.select('Y') #radiances
     sds_data_radiances=sds_radiances.get() 
     ic(sds_data_radiances.shape)
-    n_bands =filehdf.select('bands_radiances_38bands').get() 
+    bands =filehdf.select('chan').get()  #channel
 
     
     sds_data_radiances= np.ma.masked_array(sds_data_radiances, np.isnan(sds_data_radiances))
@@ -159,29 +192,17 @@ def main():
 #     #from sklearn.model_selection import train_test_split
 #     #df_train, df_test = train_test_split(X_scaled, test_size = .3, random_state = 42)
 #     #df_train_2, df_test_2 = train_test_split(MB_matrix_scaled, test_size = .3, random_state = 42)
-    df_train = X_data[:,:,:400]
-    img_shape = df_train.shape[1:]
+    X_train =  X_data[:,:,:400]
+    img_shape = X_train.shape[1:]
 #     print(df_train.shape,img_shape,df_train.max()) ##########no seria adecuado serapar asi xq de ahi nose como obtener una imagen
-
      ###### flat ###########################
-    X_flated = sds_data_radiances.transpose(1,2,0).reshape(-1,sds_data_radiances.shape[0])
-    
-    df=pd.DataFrame(X_flated) 
-    for i in range(len(n_bands)-1):
-        count_nan = df[i].isnull().sum()
-        print (i,'Count of NaN: ' + str(count_nan))    
-    pd.set_option('display.float_format', lambda x: '%.1f' % x)
-    df.describe().to_csv(out_file+"radiances_description.csv")
-  
-    df_after_drop= df.drop([8,9,10,11,12,13,14,15,16,17], axis=1)
-    df_after_drop=df_after_drop.dropna( subset = [1,5,7,18,37], how = 'any' )
-    ic(df_after_drop.count())  
-    
+
+    df = dataframe_csv(variable = X_train, colum = bands, out_file = out_file)
+ 
      ###### standard scaler ###########################
-    scaler = preprocessing.StandardScaler().fit(df_after_drop)
-    X_scaled = scaler.transform(df_after_drop)
-    #X_scaled= np.ma.masked_array(X_scaled, np.isnan(X_scaled))   
-    
+    scaler = preprocessing.StandardScaler().fit(df)
+    X_scaled = scaler.transform(df)
+    #X_scaled= np.ma.masked_array(X_scaled, np.isnan(X_scaled))      
     ###### analysis  PCA###########################
     name_plot= "PCA_variance"
     n_pca= args.n_pca
@@ -189,9 +210,6 @@ def main():
     
 
 
-
-
-    
     #X_reduced_test = pca.transform(scale(X_test))[:,:1]
 
 
