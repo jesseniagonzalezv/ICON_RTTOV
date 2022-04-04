@@ -102,12 +102,12 @@ def grid(limit, gsize, indata, inlat, inlon):
     # print(count)
     avg_var = sum_var #/ count
 
-    print('------------------------------DATAFRAMA---------------------')
-    print(np.shape(avg_var))
+    #print('------------------------------DATAFRAMA---------------------')
+    #print(np.shape(avg_var))
     #x_flat = avg_var.reshape(avg_var.shape[0]*avg_var.shape[0],-1) #
     x_flat = np.reshape(avg_var, (avg_var.shape[0]*avg_var.shape[1],-1))
 
-    print(np.shape(avg_var))
+    #print(np.shape(avg_var))
  
     # df=pd.DataFrame(x_flat) 
     # count_nan = df[i].isnull().sum()
@@ -154,17 +154,18 @@ def read_coordinate(file_g):
     longitude=lon #.flatten()
     return latitude, longitude
 
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib as mpl
+from matplotlib.colors import LinearSegmentedColormap
+import numpy as np
+from matplotlib.ticker import MaxNLocator
+
 def visulize_sat(variable, bands, lat, lon, cbar_label,
              figure_name, map_limit):
     # fs_titel = 20
     # fs_label = 20
-    from mpl_toolkits.basemap import Basemap
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import matplotlib as mpl
-    from matplotlib.colors import LinearSegmentedColormap
-    import numpy as np
-    from matplotlib.ticker import MaxNLocator
 
     #to plot > 1 figures
 
@@ -485,3 +486,118 @@ def dataframe_csv(variable, colum, out_file):
 
         # convert to Dataframe 
 
+
+from matplotlib.pyplot import figure 
+
+def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
+    
+    norme = 0.8#0.4 # factor to increase the brightness ]0,1]
+
+    rgb = np.zeros((along_track, cross_trak,3))
+
+    rgb = z / norme
+
+    rgb[ rgb > 1 ] = 1.0
+    rgb[ rgb < 0 ] = 0.0
+
+    fig = figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+
+    ax = fig.add_subplot(111)
+
+    img = ax.imshow(np.fliplr(rgb), interpolation='nearest', origin='lower')
+#    img = plt.imshow((rgb), interpolation='nearest', origin='lower')
+    
+    l = [int(i) for i in np.linspace(0,cross_trak,6)]
+    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+
+    l = [int(i) for i in np.linspace(0,along_track,9)]
+    plt.yticks(l, l, rotation=0, fontsize=11 )
+
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+
+    plt.title('', fontsize=16)
+
+    #plt.show()    
+    name_output = "{}/{}_RGB_image.png".format(out_file,name_plot) 
+    fig.savefig(name_output) 
+
+    fig.savefig(name_output) 
+    print("Plotted RGB:",name_output)
+    plt.close()          
+ 
+
+def rgb_image(out_file, myd021km_file):
+    #https://moonbooks.org/Jupyter/deep_learning_with_tensorflow_for_modis_multilayer_clouds/
+    selected_sds = myd021km_file.select('EV_250_Aggr1km_RefSB')
+    selected_sds_attributes = selected_sds.attributes()
+
+    for key, value in selected_sds_attributes.items():
+        if key == 'reflectance_scales':
+            reflectance_scales_250_Aggr1km_RefSB = np.asarray(value)
+        if key == 'reflectance_offsets':
+            reflectance_offsets_250_Aggr1km_RefSB = np.asarray(value)
+
+    sds_data_250_Aggr1km_RefSB = selected_sds.get()
+
+
+    selected_sds = myd021km_file.select('EV_500_Aggr1km_RefSB')
+
+    selected_sds_attributes = selected_sds.attributes()
+
+    for key, value in selected_sds_attributes.items():
+        if key == 'reflectance_scales':
+            reflectance_scales_500_Aggr1km_RefSB = np.asarray(value)
+        if key == 'reflectance_offsets':
+            reflectance_offsets_500_Aggr1km_RefSB = np.asarray(value)
+
+    sds_data_500_Aggr1km_RefSB = selected_sds.get()
+
+    print( reflectance_scales_500_Aggr1km_RefSB.shape)
+
+
+    data_shape = sds_data_250_Aggr1km_RefSB.shape
+
+    along_track = data_shape[1]
+    cross_trak = data_shape[2]
+
+    z = np.zeros((along_track, cross_trak,3))
+
+    z[:,:,0] = ( sds_data_250_Aggr1km_RefSB[0,:,:] - reflectance_offsets_250_Aggr1km_RefSB[0] ) * reflectance_scales_250_Aggr1km_RefSB[0]  
+    z[:,:,1] = ( sds_data_500_Aggr1km_RefSB[1,:,:] - reflectance_offsets_500_Aggr1km_RefSB[1] ) * reflectance_scales_500_Aggr1km_RefSB[1]  
+    z[:,:,2] = ( sds_data_500_Aggr1km_RefSB[0,:,:] - reflectance_offsets_500_Aggr1km_RefSB[0] ) * reflectance_scales_500_Aggr1km_RefSB[0] 
+    
+    #z[:,:,1] = ( sds_data_500_Aggr1km_RefSB[1,:,:] - reflectance_offsets_250_Aggr1km_RefSB[1] ) * reflectance_scales_500_Aggr1km_RefSB[1]  
+    # R = z[:,:,0]
+    # G_true = z[:,:,1]
+    # B = 0.5 *(R + G_true)
+
+        # Apply the gamma correction
+       
+
+    R = z[:,:,0]
+    G = z[:,:,1]
+    B = z[:,:,2]
+
+    R = np.clip(R, 0, 1)
+    G = np.clip(G, 0, 1)
+    B = np.clip(B, 0, 1)
+    
+    gamma = 2.2
+    R = np.power(R, 1/gamma)
+    G = np.power(G, 1/gamma)
+    B = np.power(B, 1/gamma)
+
+    # Calculate the "True" Green
+    #G_true = 0.48358168 * R + 0.45706946 * B + 0.06038137 * G
+    G_true = 0.45 * R + 0.1 * G + 0.45 * B
+    G_true = np.clip(G_true, 0, 1)
+
+    # The final RGB array :)
+    RGB = np.dstack([R, G_true, B])
+
+    
+    plot_rgb_image(along_track, cross_trak, RGB, out_file, name_plot = "total")
+
+    return z
+    #https://proj.org/operations/projections/eqc.html  satpy
