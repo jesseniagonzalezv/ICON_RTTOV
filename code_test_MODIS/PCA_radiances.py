@@ -24,7 +24,8 @@ def pair_plot(name_plot,X,n_components,out_file):
                          diag_kind='kde',plot_kws={"s": 3})
     a.fig.suptitle(name_plot, y=1.00)
     plt.tight_layout()
-    a.savefig(out_file+name_plot+".png") 
+    a.savefig("{}/{}.png".format(out_file,name_plot)) 
+    
     plt.close()
     
 def cov_eigval_numpy(X_scaled):
@@ -62,7 +63,8 @@ def variance_numpy_plot(name_plot,var_exp,cum_var_exp,n_components, out_file):
              color='red')
     plt.ylabel('Explained variance ratio')
     plt.xlabel('Principal component index')
-    fig.savefig(out_file+name_plot+".png") 
+    fig.savefig("{}/{}.png".format(out_file,name_plot)) 
+
     plt.close()
 
 def variance_sklearn_plot(name_plot,pca,n_components, out_file):
@@ -76,7 +78,8 @@ def variance_sklearn_plot(name_plot,pca,n_components, out_file):
              color='red')
     plt.ylabel('Explained variance ratio')
     plt.xlabel('Principal Components')
-    fig.savefig(out_file+name_plot+".png") 
+    fig.savefig("{}/{}.png".format(out_file,name_plot)) 
+
     plt.close()
     
     
@@ -142,7 +145,7 @@ def dataframe_csv(variable, colum, out_file):
     pd.set_option('display.float_format', lambda x: '%.1f' % x)
     df.columns= colum
     
-    df.describe().to_csv(out_file + "radiances_description.csv")    
+    df.describe().to_csv(out_file + "/radiances_description.csv")    
     print("ok dataframe")
     
     return df_after_drop
@@ -200,7 +203,7 @@ def main():
     df = dataframe_csv(variable = X_train, colum = bands, out_file = out_file)
  
      ###### standard scaler ###########################
-    scaler = preprocessing.StandardScaler().fit(df)
+    scaler = preprocessing.StandardScaler().fit(df)  #Standardize features by removing the mean and scaling to unit variance
     X_scaled = scaler.transform(df)
     #X_scaled= np.ma.masked_array(X_scaled, np.isnan(X_scaled))      
     ###### analysis  PCA###########################
