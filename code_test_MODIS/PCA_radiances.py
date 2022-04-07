@@ -202,7 +202,7 @@ def plot_image_PC(PC_2d_Norm, image_3bands,  out_file):
     ax1.imshow((image_3bands),  origin='lower')#,vmin=100,vmax=1500)
 
     ax2=plt.subplot(132)
-    ax2.imshow(PC_2d_Norm[:,:,:3][:,:,[0,2,1]].astype(int),  origin='lower')
+    ax2.imshow(PC_2d_Norm[:,:,:3][:,:,[0,2,1]].astype(int),  origin='lower') #aca creo que xq rgb esta en otro orden 
     ax2.axis('off')
     
     #ax2=plt.subplot(132)
@@ -211,6 +211,48 @@ def plot_image_PC(PC_2d_Norm, image_3bands,  out_file):
     plt.close()
     
     
+def get_kmeans(nbands, imagery, out_file):
+    from sklearn.cluster import KMeans
+    #import natsort
+
+    # create an empty array in which each column will hold a flattened band
+    flat_data = np.empty((imagery.shape[0]*imagery.shape[1], nbands)) #x,y
+
+    # loop through each band in the image and add to the data array
+    n_PC = 3
+    for i in range(n_PC): #nbands):
+        band = imagery[:,:,i] #ch in the last 2
+        flat_data[:, i-1] = band.flatten()
+
+    # set up the kmeans classification by specifying the number of clusters 
+    n_cluster = 5
+    km = KMeans(n_clusters = n_cluster)
+    # begin iteratively computing the position of the two clusters
+    km.fit(flat_data)
+
+    # use the sklearn kmeans .predict method to assign all the pixels of an image to a unique cluster
+    flat_predictions = km.predict(flat_data)
+
+    # rehsape the flattened precition array into an MxN prediction mask
+    prediction_mask = flat_predictions.reshape((imagery.shape[0], imagery.shape[1])) #x,y
+    ic("prediction_mask", np.shape(prediction_mask))
+    #plot the imagery and the prediction mask for comparison
+
+    fig = plt.figure(figsize=(50,30))  
+
+    # plt.imshow(imagery[0,:,:])
+    # plt.title("Imagery")
+    # plt.axis('off')
+    # plt.close()
+
+    plt.imshow(prediction_mask,  origin='lower') 
+    plt.title('kmeans predictions')
+    plt.axis('off')
+    
+    fig.savefig("{}/kmeans predictions_{}PC_{}cluster.png".format(out_file,n_PC,n_cluster)) 
+
+    plt.close()
+
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
@@ -312,6 +354,7 @@ def main():
                      
     PC_2d_Norm = convert_3D(PC, img_shape,n_bands)
     
+    ic("PC_2d_Norm x,y,xh:", np.shape(PC_2d_Norm))
     plot_PC(PC_2d_Norm, n_bands, out_file)
     # Rearranging 1-d arrays to 2-d arrays of image size
 
@@ -320,7 +363,8 @@ def main():
 
     #X_reduced_test = pca.transform(scale(X_test))[:,:1]
 
-
+    get_kmeans(nbands = n_bands, imagery = PC_2d_Norm, out_file = out_file)
+    
     sys.stdout.close()
    # ic.disable()
     
