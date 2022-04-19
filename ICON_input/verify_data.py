@@ -9,11 +9,13 @@ def main():
     arg('--path-data-copied', type=str, default='input_copied.nc', help='path of the copied data is' )
     arg('--type-data', type=str, default='2D', help='2D or 3D or surface' )
     arg('--n-timestep', type=int, default=7, help='timestep 2=13 or 3D=7')
+    arg('--hour', type=str, default=12, help='timestep 2=13 or 3D=7')
     #arg('--flip-div100', type=str, default='y', help='y= it was flip and divided between 100, n=not flip, not divided' )
-
-    file_lwp= xr.open_dataset("/work/bb1036/b381362/dataset/2d_cloud_day_DOM03_ML_20130502T120000Z_grid.nc")
-
     args = parser.parse_args()
+    
+
+
+
 
 
     fname = args.path_data_ini 
@@ -48,9 +50,12 @@ def main():
           	    		
         elif(v == ('ps') or v ==('t_s') ):
           print(v,':copied correctly',np.array_equal(ds[v].values[(args.n_timestep-1),:,:],ds_1timestep[v].values[:,:]))
+        
         elif(v == ('clwvi')):
+          file_lwp= xr.open_dataset(("/work/bb1036/b381362/dataset/2d_cloud_day_DOM03_ML_20130502T{}0000Z_grid.nc").format(args.hour)) #xq esta usando esto???
           print(v, ':copied correctly', np.array_equal(file_lwp[v].values[(args.n_timestep-1),:,:],ds_1timestep[v].values[:,:]))
-
+          file_lwp.close()     
+   	                     
     elif(args.type_data == 'surface'):
       print('Verifing copied data_surface')
       for v in ds_variables:
@@ -67,7 +72,7 @@ def main():
 	
     ds.close()
     ds_1timestep.close()
-    file_lwp.close()                        
+
 
 
 if __name__ == '__main__':
