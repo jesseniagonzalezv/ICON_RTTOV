@@ -10,7 +10,7 @@ path_data_in=/work/bb1036/b381362/dataset #/poorgafile1/climate/hdcp2/2013
 
 path_data_out=/work/bb1036/b381362/dataset #/home/jvillarreal
 
-for hr in 12
+for hr in 09 #12
 
 do
 
@@ -48,11 +48,11 @@ do
 
 	#-------------------------------------------------------------------------------
 
-
+<<COMMENT1
 	echo ------------------- 3D generating-----------------------------
 
-	#cdo -seltimestep,$seltimestep_3D -selvar,qnc,cli,clw,clc,hus,qr,qs,pres,ta $path_data_in/$fname3d_in $path_data_out/$fout3d_1
-	#ncwa -a time $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov
+	cdo -seltimestep,$seltimestep_3D -selvar,qnc,cli,clw,clc,hus,qr,qs,pres,ta $path_data_in/$fname3d_in $path_data_out/$fout3d_1
+	ncwa -a time $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov
 	cdo  -setattribute,clc@units="fraction" -selname,clc -divc,100 $path_data_out/$fout3d_rttov  clc_variable.nc #convert percent to fraction
 	
 	cdo replace $path_data_out/$fout3d_rttov clc_variable.nc $path_data_out/$fout3d_1
@@ -95,7 +95,7 @@ do
 
 
 	echo ----------verify 2D--------
-	python verify_data.py --path-data-in $path_data_in/$fout2d_1  --path-data-copied $path_data_out/$fout2d_rttov --type-data '2D' --n-timestep $seltimestep_2D
+	python verify_data.py --path-data-in $path_data_in/$fout2d_1  --path-data-copied $path_data_out/$fout2d_rttov --type-data '2D' --n-timestep $seltimestep_2D --hour ${hr}
 
 	rm $path_data_out/$fout2d_2 #$path_data_out/$fout2d_1 
 
@@ -120,24 +120,27 @@ do
 
 	
 
-	cdo -O -f nc merge  $path_data_out/$fout3d_rttov_flip $path_data_out/$fout2d_rttov $fout_landmask_rttov $fout_surface_rttov $path_data_out/data_rttov_T12.nc  
+	cdo -O -f nc merge  $path_data_out/$fout3d_1 $path_data_out/$fout2d_rttov $fout_landmask_rttov $fout_surface_rttov $path_data_out/data_rttov_T${hr}.nc  
 	##cdo -O -f nc merge $path_data_out/$fout3d_rttov $path_data_out/$fout2d_rttov $fout_landmask_rttov $fout_surface_rttov $fout_test_rttov
 
-	echo ------------------- $path_data_out/data_rttov_T12.nc generated data input to RTTOV ---------------------------------------------
-	#COMMENT3
+	echo ------------------- $path_data_out/data_rttov_T${hr}.nc generated data input to RTTOV ---------------------------------------------
+COMMENT1
+
 
 	echo ------------ verify------------------------
-	python verify_data.py --path-data-in  $path_data_in/$fname3d_in   --path-data-copied $path_data_out/data_rttov_T12.nc --type-data '3D' --n-timestep $seltimestep_3D 
-	python verify_data.py --path-data-in $path_data_in/$fout2d_1  --path-data-copied $path_data_out/data_rttov_T12.nc --type-data '2D' --n-timestep $seltimestep_2D
-	python verify_data.py --path-data-in $fout_surface  --path-data-copied $path_data_out/data_rttov_T12.nc --type-data 'surface'
+	python verify_data.py --path-data-in  $path_data_in/$fname3d_in   --path-data-copied $path_data_out/data_rttov_T${hr}.nc --type-data '3D' --n-timestep $seltimestep_3D 
+	python verify_data.py --path-data-in $path_data_in/$fout2d_1  --path-data-copied $path_data_out/data_rttov_T${hr}.nc --type-data '2D' --n-timestep $seltimestep_2D --hour ${hr}
+	python verify_data.py --path-data-in $fout_surface  --path-data-copied $path_data_out/data_rttov_T${hr}.nc --type-data 'surface'
+<<COMMENT2
 	rm $fout_surface
 
-	ncks -C -O -x -v height_bnds $path_data_out/data_rttov_T12.nc $path_data_out/data_rttov_T12.nc
+
+	ncks -C -O -x -v height_bnds $path_data_out/data_rttov_T${hr}.nc $path_data_out/data_rttov_T${hr}.nc
 
 	echo --------------------------subset-----------------------------------
-	ncks -d lon,8.,9. -d lat,48.,50.  $path_data_out/data_rttov_T12.nc $path_data_out/subset_rttov_T12.nc #Npoint=182*59=10738
-	echo --------- $path_data_out/subset_rttov_T12.nc subset--------------- 
-	#COMMENT1
+	ncks -d lon,8.,9. -d lat,48.,50.  $path_data_out/data_rttov_T${hr}.nc $path_data_out/subset_rttov_T${hr}.nc #Npoint=182*59=10738
+	echo --------- $path_data_out/subset_rttov_T${hr}.nc subset--------------- 
+COMMENT2
 	
 
 	done
