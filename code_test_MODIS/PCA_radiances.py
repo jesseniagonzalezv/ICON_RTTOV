@@ -126,6 +126,7 @@ def convert_3D(PC, img_shape,n_bands):
                      
                      
 def plot_PC(PC_2d_Norm, n_bands, out_file):
+    
     fig,axes = plt.subplots(6,6,figsize=(50,23),sharex='all',sharey='all')
     fig.subplots_adjust(wspace=0.1, hspace=0.15)
     fig.suptitle('Intensities of Principal Components ', fontsize=30)
@@ -205,21 +206,35 @@ def plot_image_PC(PC_2d_Norm, image_3bands,  out_file):
     ax2.imshow(PC_2d_Norm[:,:,:3][:,:,[0,2,1]].astype(int),  origin='lower') #aca creo que xq rgb esta en otro orden 
     ax2.axis('off')
     
-    #ax2=plt.subplot(132)
-    #ax2.imshow(mask_overlay(img2, mask))
+   # #ax2=plt.subplot(132)
+    ##ax2.imshow(mask_overlay(img2, mask))
     fig.savefig("{}/image_rgb_3PC.png".format(out_file)) 
     plt.close()
+
+def plot_image_rgb(image_3bands,  out_file):
+
+    print(np.shape(image_3bands),np.min(image_3bands),np.max(image_3bands))
+
+    fig = plt.figure(figsize=(20,15))  
+    plt.subplots_adjust(hspace=0.2, wspace=0.2)
+    ax1=plt.subplot(131)
+    ax1.imshow(image_3bands,  origin='lower')# 1,4,3 =0,2,1
+
+    plt.title('RGB')
+
+    fig.savefig("{}/image_rgb_T12.png".format(out_file)) 
+    plt.close()
     
+from sklearn.cluster import KMeans
     
 def get_kmeans(nbands, imagery, out_file):
-    from sklearn.cluster import KMeans
     #import natsort
 
     # create an empty array in which each column will hold a flattened band
     flat_data = np.empty((imagery.shape[0]*imagery.shape[1], nbands)) #x,y
 
     # loop through each band in the image and add to the data array
-    n_PC = 3
+    n_PC = 6 #2 #3 test JQ
     for i in range(n_PC): #nbands):
         band = imagery[:,:,i] #ch in the last 2
         flat_data[:, i-1] = band.flatten()
@@ -238,7 +253,7 @@ def get_kmeans(nbands, imagery, out_file):
     ic("prediction_mask", np.shape(prediction_mask))
     #plot the imagery and the prediction mask for comparison
 
-    fig = plt.figure(figsize=(50,30))  
+    fig = plt.figure(figsize=(20,15))  
 
     # plt.imshow(imagery[0,:,:])
     # plt.title("Imagery")
@@ -253,6 +268,35 @@ def get_kmeans(nbands, imagery, out_file):
 
     plt.close()
 
+def n_clusters(nbands, imagery, out_file):
+    # create an empty array in which each column will hold a flattened band
+    flat_data = np.empty((imagery.shape[0]*imagery.shape[1], nbands)) #x,y
+
+    # loop through each band in the image and add to the data array
+    n_PC = 2 #3 test JQ
+    for i in range(n_PC): #nbands):
+        band = imagery[:,:,i] #ch in the last 2
+        flat_data[:, i-1] = band.flatten()
+        
+    data_transformed = flat_data
+    
+    Sum_of_squared_distances = []
+    K = range(1,15)
+    for k in K:
+        km = KMeans(n_clusters=k)
+        km = km.fit(data_transformed)
+        Sum_of_squared_distances.append(km.inertia_)
+        
+    fig = plt.figure(figsize=(20,15))  
+
+    plt.plot(K, Sum_of_squared_distances, 'bx-')
+    plt.xlabel('k')
+    plt.ylabel('Sum_of_squared_distances')
+    plt.title('Elbow Method For Optimal k')
+    fig.savefig("{}/Elbow Method For Optimal.png".format(out_file)) 
+
+    plt.close()
+    
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
@@ -266,13 +310,57 @@ def main():
     fname_in = args.path_in 
     out_file = args.path_out 
     
-    sys.stdout = open(out_file+'/log_PCA_radiances.txt','wt')
-
-    # Read data
+    
     name_file = fname_in +args.name_input
     ic(name_file)
     filehdf = SD(name_file, SDC.READ)
     datasets_dict = filehdf.datasets()
+    
+    
+    sds_refl= filehdf.select('bt_refl_total').get() #radiances
+    #####################################################
+    ##### MODIS  (Bands 1 4 3 | Red, Green, Blue) 
+#     R = sds_data_radiances[0,:,]/ np.max(sds_data_radiances[0,:,:])
+#     G = sds_data_radiances[3,:,]/ np.max(sds_data_radiances[3,:,:])
+#     B = sds_data_radiances[2,:,]/ np.max(sds_data_radiances[2,:,:])
+    
+    R = sds_refl[0,:,]/ np.max(sds_refl[0,:,])  #1,3,4 = 0,1,2 then change for it when 0,2,3
+    G = sds_refl[2,:,]/ np.max(sds_refl[2,:,])
+    B = sds_refl[1,:,]/ np.max(sds_refl[1,:,])
+    
+
+    R = np.clip(R, 0, 1)
+    G = np.clip(G, 0, 1)
+    B = np.clip(B, 0, 1)
+    
+    gamma = 2.2
+    R = np.power(R, 1/gamma)
+    G = np.power(G, 1/gamma)
+    B = np.power(B, 1/gamma)
+
+    # Calculate the "True" Green
+    #G_true = 0.48358168 * R + 0.45706946 * B + 0.06038137 * G
+    G_true = 0.45 * R + 0.1 * G + 0.45 * B
+    G_true = np.clip(G_true, 0, 1)
+
+    # The final RGB array :)
+    RGB = np.dstack([R, G_true, B])
+    #RGB = np.dstack([R, G, B])
+    print("RGB:", np.shape(RGB))
+    
+    ic("r,g,b max", np.max(R),np.max(G), np.max(B))
+    ic("After scaled -mean/std:", pd.DataFrame(RGB.reshape(-1,3)).describe() )
+    plot_image_rgb(image_3bands = RGB,  out_file = out_file)
+
+    #####################################################
+
+    
+    '''    
+    
+    sys.stdout = open(out_file+'/log_PCA_radiances.txt','wt')
+
+    # Read data
+
 
     for idx,sds in enumerate(datasets_dict.keys()):
         ic(idx,sds)
@@ -280,7 +368,6 @@ def main():
     sds_radiances = filehdf.select('Y') #radiances
     sds_data_radiances=sds_radiances.get() 
     
-    sds_BRDF= filehdf.select('brdf').get() #radiances
 
     ic(sds_data_radiances.shape)
     bands =filehdf.select('chan').get()  #channel
@@ -289,27 +376,7 @@ def main():
 
     sds_data_radiances= np.ma.masked_array(sds_data_radiances, np.isnan(sds_data_radiances))
     
-    #####################################################
-    #MODIS  (Bands 1 4 3 | Red, Green, Blue) 
-    R = sds_data_radiances[0,:,]/ np.max(sds_data_radiances[0,:,:])
-    G = sds_data_radiances[3,:,]/ np.max(sds_data_radiances[3,:,:])
-    B = sds_data_radiances[2,:,]/ np.max(sds_data_radiances[2,:,:])
     
-#     R = sds_BRDF[0,:,]/ np.max(sds_BRDF[0,:,:])
-#     G = sds_BRDF[3,:,]/ np.max(sds_BRDF[3,:,:])
-#     B = sds_BRDF[2,:,]/ np.max(sds_BRDF[2,:,:])
-    
-    ic("r,g,b max", np.max(R),np.max(G), np.max(B))
-
-    # image_R = (R- np.mean(R))/np.std(R)
-    # image_G = (G - np.mean(G))/np.std(G)
-    # image_B = (B- np.mean(B))/np.std(B)
-    RGB = np.dstack([R, G, B])
-    print("RGB:", np.shape(RGB))
-    ic("After scaled -mean/std:", pd.DataFrame(RGB.reshape(-1,3)).describe() )
-
-    #####################################################
-
 
     #X_flated= np.ma.masked_array(X_flated, np.isnan(X_flated))
     #X_flat= np.ma.masked_array(X_flat, np.isnan(X_flat))
@@ -345,11 +412,14 @@ def main():
     #X_scaled= np.ma.masked_array(X_scaled, np.isnan(X_scaled))      
     ###### analysis  PCA###########################
     name_plot= "PCA_variance"
-    n_pca= args.n_pca
+    
+    n_pca = args.n_pca #2 #test JQ 
+    n_bands = len(bands) #2 #test JQ 
+
+   # X_scaled =X_scaled[:,[0,25]] # test JQ
     
     PC, X_reduced = PCA_calculation(X_scaled,name_plot,n_pca,out_file)
     
-    n_bands = len(bands)
     
                      
     PC_2d_Norm = convert_3D(PC, img_shape,n_bands)
@@ -365,7 +435,11 @@ def main():
 
     get_kmeans(nbands = n_bands, imagery = PC_2d_Norm, out_file = out_file)
     
+    #n_clusters(nbands = n_bands, imagery = PC_2d_Norm, out_file = out_file)
+
+    '''
     sys.stdout.close()
+    
    # ic.disable()
     
 if __name__ == '__main__':

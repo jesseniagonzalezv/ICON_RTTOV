@@ -68,6 +68,7 @@ python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github
 
 python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-1-to-7-test_without_reff.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-msg-1-to-7-test_without_reff' --type-simulation 'radiances'
 
+python simulation.py --path-OUTPUT-RTTOV '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-data-icon-1-2-psfc.nc' --path-output '/home/jvillarreal/Documents/phd/output' --input-data 'rttov-13-data-icon-1-2-psfc' --type-simulation 'radiances'
 
 
 #### data-rttov data created with the ICON LEM
