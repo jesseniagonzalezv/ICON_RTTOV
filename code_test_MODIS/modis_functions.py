@@ -279,33 +279,45 @@ def visulize_sat(variable, bands, lat, lon, cbar_label,
     fig.savefig("{} in bands {}.png".format(figure_name, bands)) 
     plt.close()            
 
+    
+def read_level1_array(file_i, var_name, type_variable):
+    '''
+    Function to obtain the radiances or reflectances values
+        Based on https://hdfeos.org/zoo/LAADS/MYD021KM.A2002226.0000.006.2012033082925.hdf.py
 
-def read_level1_radiances(file_i, var_name):
+    Input:
+     - file_i : name of the MODIS file
+     - var_name : name of the varibale to read ('EV_250_Aggr1km_RefSB', 'EV_500_Aggr1km_RefSB', 'EV_1KM_RefSB', 'EV_1KM_Emissive')
+     - type_variable: "reflectance" or "radiance" 
+    
+    Output: 
+     - variable_raw (ChxHxW): MODIS values with any modification, raw data (H - Height , W - Width , Ch - channel)
+     - variable_calibrated (ChxHxW): MODIS values after offset and scale
+    '''
 
     variable_sds= file_i.select(var_name)    
-    variable = variable_sds.get()
+    variable_raw = variable_sds.get()
 
     #get scale factor and fill value for reff field
     attributes = variable_sds.attributes()
 
-    valid_var=np.zeros(np.shape(variable))
+    variable_calibrated = np.zeros(np.shape(variable_raw))
 
-    fva=attributes["_FillValue"]
+    fva = attributes["_FillValue"]
     FillValue = fva
 
     vra=attributes["valid_range"]
     valid_min = vra[0]        
     valid_max = vra[1]
 
-    print("_FillValue",fva )
-    print("min and max val", valid_min, valid_max)
+    #print("_FillValue",fva )
+    #print("min and max val", valid_min, valid_max)
 
 
+    for i in range(len(variable_raw)):
+        #print(i)
 
-    for i in range(len(variable)):
-        print(i)
-
-        data = variable[i].astype(np.double)
+        data = variable_raw[i].astype(np.double)
         invalid = np.logical_or(data > valid_max,
                             data < valid_min)
         invalid = np.logical_or(invalid, data == FillValue)
@@ -314,24 +326,26 @@ def read_level1_radiances(file_i, var_name):
         
         data[invalid] = np.nan #_FillValue #np.nan
     
-
-        scale_factor = attributes['radiance_scales'][i]
-        add_offset  = attributes['radiance_offsets'][i]
+        #print("type_variable",type_variable)
+        if (type_variable == "reflectance"):
+            scale_factor = attributes['reflectance_scales'][i]
+            add_offset  = attributes['reflectance_offsets'][i]
+        
+        elif (type_variable == "radiance"):
+            scale_factor = attributes['radiance_scales'][i]
+            add_offset  = attributes['radiance_offsets'][i]
         #get the valid var
         data= (data-add_offset)*scale_factor
 
 
         data = np.ma.masked_array(data, np.isnan(data)) 
-        valid_var[i] = data
+        variable_calibrated[i] = data
 
         # print('data min and max read func',np.min(data), np.max(data) )
-
-        # print('valid_var min and max read func',np.min(valid_var), np.max(valid_var) )
-
-
-        print("fin reading")
-        #valid_var[i] = valid_var[i].flatten()
-    return variable, valid_var  
+        # print('variable_calibrated min and max read func',np.min(variable_calibrated), np.max(variable_calibrated) )
+        #variable_calibrated[i] = variable_calibrated[i].flatten()
+        
+    return variable_raw, variable_calibrated  
 
 
 def read_bands(file_i, var_name):
@@ -349,24 +363,19 @@ import argparse
 
 
 
-def save_ncfile(name_variable, name_file, array, lat_array, lon_array, bands_array):
+def save_ncfile(name_variable, name_file, array, lat_array, lon_array, bands_array, type_variable):
 
     
     try: ncfile.close()  # just to be safe, make sure dataset is not already open.
     except: pass
     #ncfile = Dataset('/home/jvillarreal/GRID_DOM3_new.nc',mode='w',format='NETCDF4') 
     ncfile = Dataset(name_file,mode='w',format='NETCDF4') 
-    print(ncfile)
-
     #print(ncfile)
 
     x_dim = ncfile.createDimension('Max_EV_frames:MODIS_SWATH_Type_L1B', array.shape[2])    # longitude axis
     y_dim = ncfile.createDimension('10*nscans:MODIS_SWATH_Type_L1B', array.shape[1])     # latitude axis
 
     bands_dim = ncfile.createDimension('bands', np.size(bands_array))    # longitude axis
-
-    for dim in ncfile.dimensions.items():
-        print(dim)
 
     ncfile.title='MODIS and simulations'
     #print(ncfile.title)
@@ -388,7 +397,12 @@ def save_ncfile(name_variable, name_file, array, lat_array, lon_array, bands_arr
 
                 
     var= ncfile.createVariable(name_variable, np.float64, ('bands','10*nscans:MODIS_SWATH_Type_L1B','Max_EV_frames:MODIS_SWATH_Type_L1B'))   
-    var.units = 'Watts/m^2/micrometer/steradian'  
+    
+    if (type_variable == 'radiance'):
+        var.units = 'Watts/m^2/micrometer/steradian'  
+    
+    elif (type_variable == 'reflectance'):
+        var.units = 'none or Watts/m^2/micrometer/steradian' 
 
     lat[:]=lat_array
     lon[:]=lon_array
@@ -398,7 +412,7 @@ def save_ncfile(name_variable, name_file, array, lat_array, lon_array, bands_arr
 
     #close the Dataset.
     ncfile.close(); 
-    print('Dataset was created!',name_file)
+    print(' ------------------- Dataset was created! ',name_file)
 
 
 
@@ -489,6 +503,94 @@ def dataframe_csv(variable, colum, out_file):
 
 from matplotlib.pyplot import figure 
 
+
+def bytescale(data, cmin=None, cmax=None, high=255, low=0):
+    """
+    https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
+    Byte scales an array (image).
+
+    Byte scaling means converting the input image to uint8 dtype and scaling
+    the range to ``(low, high)`` (default 0-255).
+    If the input image already has dtype uint8, no scaling is done.
+
+    Parameters
+    ----------
+    data : ndarray
+        PIL image data array.
+    cmin : scalar, optional
+        Bias scaling of small values. Default is ``data.min()``.
+    cmax : scalar, optional
+        Bias scaling of large values. Default is ``data.max()``.
+    high : scalar, optional
+        Scale max value to `high`.  Default is 255.
+    low : scalar, optional
+        Scale min value to `low`.  Default is 0.
+
+    Returns
+    -------
+    img_array : uint8 ndarray
+        The byte-scaled array.
+
+    Examples
+    --------
+    >>> img = array([[ 91.06794177,   3.39058326,  84.4221549 ],
+                     [ 73.88003259,  80.91433048,   4.88878881],
+                     [ 51.53875334,  34.45808177,  27.5873488 ]])
+    >>> bytescale(img)
+    array([[255,   0, 236],
+           [205, 225,   4],
+           [140,  90,  70]], dtype=uint8)
+    >>> bytescale(img, high=200, low=100)
+    array([[200, 100, 192],
+           [180, 188, 102],
+           [155, 135, 128]], dtype=uint8)
+    >>> bytescale(img, cmin=0, cmax=255)
+    array([[91,  3, 84],
+           [74, 81,  5],
+           [52, 34, 28]], dtype=uint8)
+
+    """
+    if data.dtype == np.uint8:
+        return data
+
+    if high < low:
+        raise ValueError("`high` should be larger than `low`.")
+
+    if cmin is None:
+        cmin = data.min()
+    if cmax is None:
+        cmax = data.max()
+
+    cscale = cmax - cmin
+    if cscale < 0:
+        raise ValueError("`cmax` should be larger than `cmin`.")
+    elif cscale == 0:
+        cscale = 1
+
+    scale = float(high - low) / cscale
+    bytedata = (data * 1.0 - cmin) * scale + 0.4999
+    bytedata[bytedata > high] = high
+    bytedata[bytedata < 0] = 0
+    return np.cast[np.uint8](bytedata) + np.cast[np.uint8](low)
+
+
+def scale_image(image, x, y,along_track, cross_trak):
+    scaled = np.zeros((along_track, cross_trak), dtype=np.uint8)
+    for i in range(len(x)-1):
+        x1 = x[i]
+        x2 = x[i+1]
+        y1 = y[i]
+        y2 = y[i+1]
+        m = (y2 - y1) / float(x2 - x1)
+        b = y2 - (m *x2)
+        mask = ((image >= x1) & (image < x2))
+        scaled = scaled + mask * np.asarray(m * image + b, dtype=np.uint8)
+
+    mask = image >= x2
+    scaled = scaled + (mask * 255)
+
+    return scaled
+
 def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
     
     norme = 0.8#0.4 # factor to increase the brightness ]0,1]
@@ -500,11 +602,35 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
     rgb[ rgb > 1 ] = 1.0
     rgb[ rgb < 0 ] = 0.0
 
-    fig = figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+#######
+    x = np.array([0,  30,  60, 120, 190, 255], dtype=np.uint8)
+    y = np.array([0, 110, 160, 210, 240, 255], dtype=np.uint8)
+        
+    z_color_enh = np.zeros((along_track, cross_trak,3), dtype=np.uint8)
+    z_color_enh[:,:,0] = scale_image(bytescale(z[:,:,0]), x, y, along_track, cross_trak)
+    z_color_enh[:,:,1] = scale_image(bytescale(z[:,:,1]), x, y,along_track, cross_trak)
+    z_color_enh[:,:,2] = scale_image(bytescale(z[:,:,2]), x, y,along_track, cross_trak)
 
+########3
+
+    fig_style_dict = {}
+
+    fig_style_dict['facecolor'] = 'white'
+#     fig = figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+
+    fig = figure(num=None, figsize=(12, 10), dpi=100, facecolor=fig_style_dict['facecolor'], edgecolor='k')
     ax = fig.add_subplot(111)
+    
 
-    img = ax.imshow(np.fliplr(rgb), interpolation='nearest', origin='lower')
+    if name_plot == "simulation":
+        ax.imshow(z_color_enh, interpolation='nearest', origin='lower')
+
+    else:
+    #     img = ax.imshow(np.fliplr(rgb), interpolation='nearest', origin='lower')
+        img= ax.imshow(np.fliplr(z_color_enh), interpolation='nearest', origin='lower')
+    #img = plt.imshow(np.fliplr(rgb)*2.0, interpolation='nearest', origin='lower')
+
+        
 #    img = plt.imshow((rgb), interpolation='nearest', origin='lower')
     
     l = [int(i) for i in np.linspace(0,cross_trak,6)]
@@ -513,11 +639,15 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
     l = [int(i) for i in np.linspace(0,along_track,9)]
     plt.yticks(l, l, rotation=0, fontsize=11 )
 
-    plt.xticks(fontsize=11)
-    plt.yticks(fontsize=11)
+    if name_plot == "simulation":
+        plt.title('Simulation RGB reflectance', fontsize=16)
 
-    plt.title('', fontsize=16)
+    else:
+        plt.title('MODIS RGB reflectance', fontsize=16)
 
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+    
     #plt.show()    
     name_output = "{}/{}_RGB_image.png".format(out_file,name_plot) 
     fig.savefig(name_output) 
@@ -525,7 +655,7 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
     fig.savefig(name_output) 
     print("Plotted RGB:",name_output)
     plt.close()          
- 
+    
 
 def rgb_image(out_file, myd021km_file):
     #https://moonbooks.org/Jupyter/deep_learning_with_tensorflow_for_modis_multilayer_clouds/
@@ -575,29 +705,32 @@ def rgb_image(out_file, myd021km_file):
         # Apply the gamma correction
        
 
-    R = z[:,:,0]
-    G = z[:,:,1]
-    B = z[:,:,2]
+#     R = z[:,:,0]
+#     G = z[:,:,1]
+#     B = z[:,:,2]
 
-    R = np.clip(R, 0, 1)
-    G = np.clip(G, 0, 1)
-    B = np.clip(B, 0, 1)
+#     R = np.clip(R, 0, 1)
+#     G = np.clip(G, 0, 1)
+#     B = np.clip(B, 0, 1)
     
-    gamma = 2.2
-    R = np.power(R, 1/gamma)
-    G = np.power(G, 1/gamma)
-    B = np.power(B, 1/gamma)
+#     gamma = 2.2
+#     R = np.power(R, 1/gamma)
+#     G = np.power(G, 1/gamma)
+#     B = np.power(B, 1/gamma)
 
-    # Calculate the "True" Green
-    #G_true = 0.48358168 * R + 0.45706946 * B + 0.06038137 * G
-    G_true = 0.45 * R + 0.1 * G + 0.45 * B
-    G_true = np.clip(G_true, 0, 1)
+#     # Calculate the "True" Green
+#     #G_true = 0.48358168 * R + 0.45706946 * B + 0.06038137 * G
+#     G_true = 0.45 * R + 0.1 * G + 0.45 * B
+#     G_true = np.clip(G_true, 0, 1)
 
-    # The final RGB array :)
-    RGB = np.dstack([R, G_true, B])
+#     # The final RGB array :)
+#     RGB = np.dstack([R, G_true, B])
 
     
-    plot_rgb_image(along_track, cross_trak, RGB, out_file, name_plot = "total")
+#     plot_rgb_image(along_track, cross_trak, RGB, out_file, name_plot = "total")
+    plot_rgb_image(along_track, cross_trak, z, out_file, name_plot = "total")
+
+
 
     return z
     #https://proj.org/operations/projections/eqc.html  satpy

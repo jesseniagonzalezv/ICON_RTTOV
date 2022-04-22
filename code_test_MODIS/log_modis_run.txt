@@ -1,0 +1,221 @@
+Reading MODIS level1B data
+(31, 58)
+0 Latitude
+1 Longitude
+2 EV_1KM_RefSB
+3 EV_1KM_RefSB_Uncert_Indexes
+4 EV_1KM_Emissive
+5 EV_1KM_Emissive_Uncert_Indexes
+6 EV_250_Aggr1km_RefSB
+7 EV_250_Aggr1km_RefSB_Uncert_Indexes
+8 EV_250_Aggr1km_RefSB_Samples_Used
+9 EV_500_Aggr1km_RefSB
+10 EV_500_Aggr1km_RefSB_Uncert_Indexes
+11 EV_500_Aggr1km_RefSB_Samples_Used
+12 Height
+13 SensorZenith
+14 SensorAzimuth
+15 Range
+16 SolarZenith
+17 SolarAzimuth
+18 gflags
+19 EV_Band26
+20 EV_Band26_Uncert_Indexes
+21 Band_250M
+22 Band_500M
+23 Band_1KM_RefSB
+24 Band_1KM_Emissive
+25 Noise in Thermal Detectors
+26 Change in relative responses of thermal detectors
+27 DC Restore Change for Thermal Bands
+28 DC Restore Change for Reflective 250m Bands
+29 DC Restore Change for Reflective 500m Bands
+30 DC Restore Change for Reflective 1km Bands
+Reading geolocation file
+(46, 27)
+0 Latitude
+1 Longitude
+2 Scan Offset
+3 Track Offset
+4 Height Offset
+5 Height
+6 SensorZenith
+7 SensorAzimuth
+8 Range
+9 SolarZenith
+10 SolarAzimuth
+11 Land/SeaMask
+12 WaterPresent
+13 gflags
+14 Scan number
+15 EV frames
+16 SD frames
+17 SV frames
+18 EV start time
+19 SD start time
+20 SV start time
+21 EV center time
+22 Mirror side
+23 SD Sun zenith
+24 SD Sun azimuth
+25 Moon Vector
+26 L1 scan quality
+27 Geo scan quality
+28 orb_pos
+29 orb_vel
+30 T_inst2ECR
+31 attitude_angles
+32 sun_ref
+33 num_impulse
+34 impulse_enc
+35 impulse_time
+36 Scan Type
+37 thermal_correction
+38 attitude_quality
+39 ephemeris_quality
+40 Focal_length
+41 band_position
+42 detector_space
+43 detector_offsets
+44 T_offset
+45 num_samples
+********** EV_250_Aggr1km_RefSB [1. 2.] ********
+********** EV_500_Aggr1km_RefSB [3. 4. 5. 6. 7.] ********
+********** EV_1KM_RefSB [ 8.   9.  10.  11.  12.  13.  13.5 14.  14.5 15.  16.  17.  18.  19. 26.] ********
+********** EV_1KM_Emissive [20. 21. 22. 23. 24. 25. 27. 28. 29. 30. 31. 32. 33. 34. 35. 36.] ********
+ ================= reflectance read in EV_250_Aggr1km_RefSB
+ ------------ Bands: [1. 2.]
+ ------------  Gridding MODIS to get Germany area  
+(1001, 701)
+(1001, 701)
+ ================= reflectance read in EV_500_Aggr1km_RefSB
+ ------------ Bands: [3. 4. 5. 6. 7.]
+ ------------  Gridding MODIS to get Germany area  
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+ ================= reflectance read in EV_1KM_RefSB
+ ------------ Bands: [ 8.   9.  10.  11.  12.  13.  13.5 14.  14.5 15.  16.  17.  18.  19.
+ 26. ]
+ ------------  Gridding MODIS to get Germany area  
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+ ================= radiance read in EV_1KM_Emissive
+ ------------ Bands: [20. 21. 22. 23. 24. 25. 27. 28. 29. 30. 31. 32. 33. 34. 35. 36.]
+ ------------  Gridding MODIS to get Germany area  
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+(1001, 701)
+ ================= Dataframe MODIS raw data ===================
+dataframe (38,) (38, 2030, 1354)
+(2748620, 38)
+In band 1.0 values NaN: 0
+In band 2.0 values NaN: 55023
+In band 3.0 values NaN: 0
+In band 4.0 values NaN: 0
+In band 5.0 values NaN: 0
+In band 6.0 values NaN: 1099448
+In band 7.0 values NaN: 0
+In band 8.0 values NaN: 422964
+In band 9.0 values NaN: 967140
+In band 10.0 values NaN: 1186253
+In band 11.0 values NaN: 1293322
+In band 12.0 values NaN: 1452127
+In band 13.0 values NaN: 1941732
+In band 13.5 values NaN: 2428439
+In band 14.0 values NaN: 1913744
+In band 14.5 values NaN: 2489338
+In band 15.0 values NaN: 2295467
+In band 16.0 values NaN: 2300644
+In band 17.0 values NaN: 211443
+In band 18.0 values NaN: 0
+In band 19.0 values NaN: 1074
+In band 26.0 values NaN: 0
+In band 20.0 values NaN: 6
+In band 21.0 values NaN: 0
+In band 22.0 values NaN: 5
+In band 23.0 values NaN: 2
+In band 24.0 values NaN: 0
+In band 25.0 values NaN: 1
+In band 27.0 values NaN: 0
+In band 28.0 values NaN: 0
+In band 29.0 values NaN: 0
+In band 30.0 values NaN: 0
+In band 31.0 values NaN: 0
+In band 32.0 values NaN: 0
+In band 33.0 values NaN: 0
+In band 34.0 values NaN: 0
+In band 35.0 values NaN: 0
+In band 36.0 values NaN: 274862
+ok dataframe
+================= Saving and dataframe refl_emis Germany===================
+ ------------------- Dataset was created!  /home/jvillarreal/Documents/phd/dataset/MODIS_Germany_refl_emis_MYD021KM.A2013122.1140.061.2018046032403.nc
+dataframe (38,) (38, 1001, 701)
+(701701, 38)
+In band 1.0 values NaN: 0
+In band 2.0 values NaN: 4055
+In band 3.0 values NaN: 0
+In band 4.0 values NaN: 0
+In band 5.0 values NaN: 0
+In band 6.0 values NaN: 106993
+In band 7.0 values NaN: 0
+In band 8.0 values NaN: 84997
+In band 9.0 values NaN: 176408
+In band 10.0 values NaN: 204134
+In band 11.0 values NaN: 215432
+In band 12.0 values NaN: 227906
+In band 13.0 values NaN: 247779
+In band 13.5 values NaN: 277880
+In band 14.0 values NaN: 246261
+In band 14.5 values NaN: 282029
+In band 15.0 values NaN: 268234
+In band 16.0 values NaN: 268427
+In band 17.0 values NaN: 10491
+In band 18.0 values NaN: 0
+In band 19.0 values NaN: 0
+In band 26.0 values NaN: 0
+In band 20.0 values NaN: 0
+In band 21.0 values NaN: 0
+In band 22.0 values NaN: 0
+In band 23.0 values NaN: 0
+In band 24.0 values NaN: 0
+In band 25.0 values NaN: 0
+In band 27.0 values NaN: 0
+In band 28.0 values NaN: 0
+In band 29.0 values NaN: 0
+In band 30.0 values NaN: 0
+In band 31.0 values NaN: 0
+In band 32.0 values NaN: 0
+In band 33.0 values NaN: 0
+In band 34.0 values NaN: 0
+In band 35.0 values NaN: 0
+In band 36.0 values NaN: 30530
+ok dataframe
