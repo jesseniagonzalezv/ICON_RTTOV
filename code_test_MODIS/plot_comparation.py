@@ -110,7 +110,7 @@ def main():
         rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
 
     elif (args.type_variable == "radiance"):
-        MODIS_variable =MODIS_ds['MODIS_Germany_radiances']
+        MODIS_variable =MODIS_ds['MODIS_Germany_radiances']  
         rttov_variable =rttov_ds_rad['Y'] #'y' neceisto cambiar el nombre de esta variable
 
     

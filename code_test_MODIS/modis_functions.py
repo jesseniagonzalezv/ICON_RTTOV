@@ -506,7 +506,6 @@ from matplotlib.pyplot import figure
 
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
-    https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
     Byte scales an array (image).
 
     Byte scaling means converting the input image to uint8 dtype and scaling
@@ -591,8 +590,9 @@ def scale_image(image, x, y,along_track, cross_trak):
 
     return scaled
 
-def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
-    
+def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lon, lat):
+        #https://moonbooks.org/Jupyter/deep_learning_with_tensorflow_for_modis_multilayer_clouds/
+
     norme = 0.8#0.4 # factor to increase the brightness ]0,1]
 
     rgb = np.zeros((along_track, cross_trak,3))
@@ -626,9 +626,14 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
         ax.imshow(z_color_enh, interpolation='nearest', origin='lower')
 
     else:
-    #     img = ax.imshow(np.fliplr(rgb), interpolation='nearest', origin='lower')
-        img= ax.imshow(np.fliplr(z_color_enh), interpolation='nearest', origin='lower')
-    #img = plt.imshow(np.fliplr(rgb)*2.0, interpolation='nearest', origin='lower')
+#     #     img = ax.imshow(np.fliplr(rgb), interpolation='nearest', origin='lower')        
+#     #img = plt.imshow(np.fliplr(rgb)*2.0, interpolation='nearest', origin='lower')
+#         img= ax.imshow(np.fliplr(z_color_enh), interpolation='nearest', origin='lower')
+        map = Basemap(projection='merc', llcrnrlon=4.5, llcrnrlat=47.8, urcrnrlon=14.5,urcrnrlat=54.5, resolution='f', ax=ax) #Germany
+    
+    
+        x,y = map(lon,lat)  
+        cs = map.pcolormesh(x,y,z_color_enh,shading='auto')
 
         
 #    img = plt.imshow((rgb), interpolation='nearest', origin='lower')
@@ -658,7 +663,7 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot):
     
 
 def rgb_image(out_file, myd021km_file):
-    #https://moonbooks.org/Jupyter/deep_learning_with_tensorflow_for_modis_multilayer_clouds/
+    #https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
     selected_sds = myd021km_file.select('EV_250_Aggr1km_RefSB')
     selected_sds_attributes = selected_sds.attributes()
 
