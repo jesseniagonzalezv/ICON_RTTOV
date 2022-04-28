@@ -11,7 +11,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
-def plot_MODIS_simulation(variable, band, lat, lon, title_subplot, map_limit, fig, ax, max_colorbar, min_colorbar,type_variable):
+def plot_MODIS_simulation(variable, band, lat, lon, title_subplot, map_limit, fig, ax, min_colorbar, max_colorbar, type_variable):
 
     #axes = axes.ravel()
         if (type_variable == "refl_emis" and (band >= 1 and band <= 20 or band == 26)):
@@ -28,21 +28,22 @@ def plot_MODIS_simulation(variable, band, lat, lon, title_subplot, map_limit, fi
         map.drawparallels(np.arange(-90.,91.,1.),labels=[1,0,0,1],fontsize=10)
         map.drawmeridians(np.arange(-180.,181.,2.),labels=[1,0,0,1],fontsize=10)
 
+        data = variable#(chan, lat, lon) #check it when it is nan or inf np.ma.masked_where((ds_array[variable][col]< 2000), ds_array[variable][col])                
+
         if(title_subplot == "RTTOV (12:30/2/5/2013)-Channel:"):
             lon,lat = np.meshgrid(lon,lat) ###funcionara sin esto revisar !!!!!!!!!!!!!!1
+            print(" ================= RTTOV data min and max: ", np.min(data),np.max(data))
+
         x,y = map(lon,lat)  
 
-        data = variable#(chan, lat, lon) #check it when it is nan or inf np.ma.masked_where((ds_array[variable][col]< 2000), ds_array[variable][col])                
-        
-        print(" ================= RTTOV data min and max: ", np.min(data),np.max(data))
         #pprint.pprint(data)
 
         #_FillValue= 999999# 0 #65535  #decide if it is needed to pass as parameter
         
         if(title_subplot == "MODIS (11:40/2/5/2013)-Channel:"):
-            data = np.ma.masked_equal(data, 0) # np.ma.masked_array(data,np.isnan(data)) # data== _FillValue)
+            data = np.ma.masked_equal(data, 0) # np.ma.masked_array(data,np.isnan(data)) # data== _FillValue) mmmno necesito creo
                 
-        print(" ================= MODIS data min and max: ", np.min(data),np.max(data))
+            print(" ================= MODIS data min and max: ", np.min(data),np.max(data))
 
         #pprint.pprint(data)
 
@@ -96,10 +97,11 @@ def main():
 
     MODIS_ds = xr.open_dataset(args.MODIS_path).compute()
     
-    rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
-    print( "MODIS shape:", np.shape(MODIS_ds['MODIS_Germany_refl_emis'].values), "RTTOV Simulation shape:", np.shape(rttov_variable))
+    # rttov_variable = np.zeros((np.shape(rttov_ds_rad['Radiance_total'].values)))
 
-    MODIS_variable = np.zeros((3, np.shape(MODIS_ds['MODIS_Germany_refl_emis'].values)[1], np.shape(MODIS_ds['MODIS_Germany_refl_emis'].values)[2]))
+    MODIS_variable = np.zeros((3, np.shape(MODIS_ds['lat'].values)[0], np.shape(MODIS_ds['lat'].values)[1]))
+    # print(3, np.shape(MODIS_ds['lat'].values)[0], np.shape(MODIS_ds['lat'].values)[1])
+
 
     if (args.type_variable == "refl_emis"):
         MODIS_variable = MODIS_ds['MODIS_Germany_refl_emis']
@@ -110,14 +112,27 @@ def main():
         rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
 
     elif (args.type_variable == "radiance"):
-        MODIS_variable =MODIS_ds['MODIS_Germany_radiances']  
-        rttov_variable =rttov_ds_rad['Y'] #'y' neceisto cambiar el nombre de esta variable
+        #MODIS_variable =MODIS_ds['MODIS_Germany_radiances']  
+        # rttov_variable =rttov_ds_rad['Y'] #'y' neceisto cambiar el nombre de esta variable
+
+        #####3# testing     2-7-32 ouputs of Alexandre
+        MODIS_variable[0]=MODIS_ds['MODIS_Germany_radiances'][1] # testing     2-7-32 ouputs of Alexandre
+        MODIS_variable[1]=MODIS_ds['MODIS_Germany_radiances'][6] 
+        MODIS_variable[2]=MODIS_ds['MODIS_Germany_radiances'][33] 
+        rttov_variable =rttov_ds_rad['Radiance_total'] #'y' neceisto cambiar el nombre de esta variable
+        #####fin testing     2-7-32 ouputs of Alexandre
+
 
     
     
-    MODIS_bands =MODIS_ds['bands'].values
+    # MODIS_bands =MODIS_ds['bands'].values
+    
+    #####3# testing     2-7-32 ouputs of Alexandre
+    MODIS_bands = np.array([1,2,3])
+    #####fin# testing     2-7-32 ouputs of Alexandre
 
-    rttov_bands =rttov_ds_rad['chan'].values  ##check it becasue i am using 2 files
+    rttov_bands = np.array([1,2,3])
+    #####fin# testing     2-7-32 ouputs of Alexandre rttov_ds_rad['chan'].values  ##check it becasue i am using 2 files
 
 #    rttov_variable =rttov_ds['Y_clear'][:]
     MODIS_lat = MODIS_ds['lat'].values
@@ -125,39 +140,43 @@ def main():
 
     rttov_lat = rttov_ds_rad['lat'].values
     rttov_lon = rttov_ds_rad['lon'].values
-    n_bands = len(MODIS_bands)*2 #np.size(bands)
+    n_imgs = len(MODIS_bands)*2 #np.size(bands)
+    print(n_imgs)
     #ncols = 2 #
     nrows = 2 #
-    #print(n_bands)
+    #print(n_imgs)
 
-    #nrows = n_bands // ncols + (n_bands % ncols > 0) #tbn pujede ser entrada
-    ncols = n_bands // nrows + (n_bands % nrows > 0) #tbn pujede ser entrada
+    #nrows = n_imgs // ncols + (n_imgs % ncols > 0) #tbn pujede ser entrada
+    ncols = n_imgs // nrows + (n_imgs % nrows > 0) #tbn pujede ser entrada
 
     fig = plt.figure(figsize=(5*ncols, 5*nrows))   
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
 
-    position =list(range(1,n_bands+1)) #[1:76]
-    position_rttov = position[:39] #position[::2]
-    position_MODIS = position[38:] #[1::2]
+    position =list(range(1,n_imgs+1)) #[1:76]
+    position_rttov = position[:n_imgs//2 +1] #position[::2]
+    position_MODIS = position[n_imgs//2:] #[1::2]
 
 
     for i in range(len(MODIS_bands)): 
     #for i in range(2):
         bnd=MODIS_bands[i].astype(int) # hacer que cuando sea igual al indice seleccionar ese cuando la dim chan ==i
+        variable = np.ma.masked_array(MODIS_variable[i],  np.isnan(MODIS_variable[i])) ## check it!!!!!!!!
 
-
-        variable = np.ma.masked_array(MODIS_variable[i],  np.isnan(MODIS_variable[i]))
         position =position_MODIS[i]
         
+        print(bnd, position)
 
         variable_simulation = np.ma.masked_array(rttov_variable[bnd-1], np.isnan(rttov_variable[bnd-1])) 
+
+        variable_simulation = np.ma.masked_equal(variable_simulation, 0) # np.ma.masked_array(data,np.isnan(data)) # data== _FillValue)
+    #check it 
             
         min_colorbar = np.min([np.min(variable), np.min(variable_simulation)])
         max_colorbar = np.max([np.max(variable), np.max(variable_simulation)])
-        # print('============modis colobar min and max',np.min(MODIS_variable[i]))
-        # print('============rttov colobar min and max', np.min(rttov_variable[bnd-1]))
+        print('============modis colobar min and max',np.min(MODIS_variable[i]), np.max(MODIS_variable[i]))
+        print('============rttov colobar min and max', np.min(rttov_variable[bnd-1].values), np.max(rttov_variable[bnd-1]).values)
 
-        # print('============code colobar min and max', min_colorbar, max_colorbar)
+        print('============code colobar min and max', min_colorbar, max_colorbar)
 
             
         
@@ -176,7 +195,11 @@ def main():
                               type_variable = args.type_variable)
         
         title_subplot= "RTTOV (12:30/2/5/2013)-Channel:"
-        position = position_rttov[i] #position+38
+        position = position_rttov[i] #position+38 
+        print(position)
+        
+        print(rttov_bands[bnd-1], position)
+
         ax = plt.subplot(nrows, ncols, position)
         plot_MODIS_simulation(variable = variable_simulation, #in the below area there are missing data i cut it, 
                               band = rttov_bands[bnd-1], 
