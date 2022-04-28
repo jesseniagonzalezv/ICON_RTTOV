@@ -16,6 +16,9 @@ def plot_input_ICON(out_file,variable,path_ICON,dimension_variable,input_data="m
     '''
     input:
     variable: name of the variable of 2 or 3 dimensions
+    Check next:
+    https://clouds.eos.ubc.ca/~phil/courses/atsc301/coursebuild/html/
+    
     '''
     ds = xr.open_dataset(path_ICON).compute()
     
@@ -71,7 +74,7 @@ def plot_variable_RTTOV(ds_array,bands, variable,out_file,input_data="my_data"):
             if(variable=="brdf"):
                 label='BRDF/unitless'
                 pcm=ds_array[variable].sel(chan=col).plot(ax=ax, cbar_kwargs={"label":label})
-            elif(variable=="Y" or variable =="Y_clear"):
+            elif(variable=="Radiance_total" or variable =="Y_clear"):
 
                 #pcm=ds_array[variable][col].plot(ax=ax, cbar_kwargs={"label":label})  #vmin=0, vmax=1000,  
                 map = Basemap(projection='merc',llcrnrlon=4.5,llcrnrlat=47.8,urcrnrlon=14.5,urcrnrlat=54.5,resolution='f',ax=ax) #Germany
@@ -143,8 +146,8 @@ def output_RTTOV(out_file,variable,path_OUTPUT_RTTOV,input_data="my_data"):
     #BRDF_flated = .reshape(-1,)
     nlat = len(ds['lat'])
     nlon = len(ds['lon'])
-    n_bands = len(ds['chan'])
-    bands = ds['chan']
+    n_bands = len(ds['channel'])
+    bands = ds['channel']
     print("number of bands",n_bands)
 
     
@@ -158,7 +161,7 @@ def output_RTTOV(out_file,variable,path_OUTPUT_RTTOV,input_data="my_data"):
 
 
     # convert to Dataframe 
-    variable_values= ds[variable].transpose('lat', 'lon','chan').values
+    variable_values= ds[variable].transpose('lat', 'lon','channel').values
     variable_flated = np.reshape(variable_values, (nlat*nlon,-1))
     variable_df = pd.DataFrame(variable_flated)
     #variable_df.describe()
@@ -224,8 +227,8 @@ def main():
         
     else:
     
-        output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)  
-        output_RTTOV(out_file=path_output,variable='Y_clear',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)
+        output_RTTOV(out_file=path_output,variable='Radiance_total',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)  
+        #output_RTTOV(out_file=path_output,variable='Y_clear',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)
         #output_RTTOV(out_file=path_output,variable='brdf',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data=input_data)
 
 
