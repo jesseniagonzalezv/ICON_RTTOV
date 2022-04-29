@@ -47,7 +47,7 @@ def main():
 
     elif args.type == "modis":
         data_ds = xr.open_dataset(args.path_in).compute()
-        data =data_ds['MODIS_Germany_radiances'] #["subset_radiances_38bands"] #['MODIS_Germany_refl_emis']
+        data =data_ds['MODIS_Germany_refl_emis'] #['MODIS_Germany_radiances'] #["subset_radiances_38bands"] #['MODIS_Germany_refl_emis']
 #         data= filehdf.select('subset_radiances_38bands').get() #radiances
 #         data= filehdf.select('MODIS_Germany_radiances').get() #radiances
 

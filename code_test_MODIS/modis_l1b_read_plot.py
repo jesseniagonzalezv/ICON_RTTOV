@@ -144,7 +144,7 @@ def main():
         
 
     elif args.task == "get_RGB":
-        reflectance_rgb = rgb_image(out_file = args.path_output, myd021km_file = file_data) #reflectance_rgb 2030,1354,3  x,y,ch
+        reflectance_rgb = rgb_image(out_file = args.path_output, myd021km_file = file_data, lat = allLat, lon = allLon) #reflectance_rgb 2030,1354,3  x,y,ch
         
 #         rgb_germany = np.empty((1,np.shape(gr_lat)[0],np.shape(gr_lat)[1]))
         
