@@ -197,7 +197,7 @@ def gridding_variable(variable, map_boundaries, gridSize, allLat, allLon):
     # check next https://notebook.community/dennissergeev/classcode/notebooks/01_MODIS_L1B#Reproject-MODIS-L1B-data-to-a-regular-grid
     #https://notebook.community/dennissergeev/classcode/notebooks/01_MODIS_L1B#Scale-factor-and-offset-value
     n_variables = len(variable)
-    valid_var_grid=np.zeros((n_variables, np.shape(allLat)[0], np.shape(allLat)[1]) #1001, 701)) ### como define it ???
+    valid_var_grid=np.zeros((n_variables, np.shape(allLat)[0], np.shape(allLat)[1])) #1001, 701)) ### como define it ???
     print('valid_var_grid', np.shape(valid_var_grid))
     for i in range(n_variables):
         valid_var_grid[i] = grid(map_boundaries, gridSize, variable[i].flatten(), allLat.flatten(), allLon.flatten())
@@ -382,10 +382,15 @@ def scale_image(image, x, y,along_track, cross_trak):
 
     return scaled
 
-def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lon, lat):
+import cartopy.crs as ccrs
+from scipy.interpolate import griddata
+from scipy.interpolate.interpnd import _ndim_coords_from_arrays
+from scipy.spatial import cKDTree
+
+def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lat, lon):
         #https://moonbooks.org/Jupyter/deep_learning_with_tensorflow_for_modis_multilayer_clouds/
 # check it https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
-    norme = 0.8#0.4 # factor to increase the brightness ]0,1]
+    norme = 0.7#0.4 # factor to increase the brightness ]0,1]
 
     rgb = np.zeros((along_track, cross_trak,3))
 
@@ -414,27 +419,148 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lon, lat):
     ax = fig.add_subplot(111)
     
 
+   
+        
     if name_plot == "simulation":
-        ax.imshow(z_color_enh, interpolation='nearest', origin='lower')
+        m = Basemap(projection='merc', llcrnrlon=4.5, llcrnrlat=47.8, urcrnrlon=14.5,urcrnrlat=54.5, ax=ax, resolution='l') #Germany f
+#         m.drawcoastlines(linewidth=0.8)
+#         m.drawcountries()
+#         m.drawstates()
+#         m.drawparallels(np.arange(-90., 120., 30.), labels=[1, 0, 0, 0])
+#         m.drawmeridians(np.arange(-180., 181., 45.), labels=[0, 0, 0, 1])
+    
+        m.imshow(z_color_enh, interpolation='nearest', origin='lower')
+    
+
+        l = [int(i) for i in np.linspace(0,cross_trak,6)]
+        plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+
+        l = [int(i) for i in np.linspace(0,along_track,9)]
+        plt.yticks(l, l, rotation=0, fontsize=11 )
 
     else:
 #     #     img = ax.imshow(np.fliplr(rgb), interpolation='nearest', origin='lower')        
 #     #img = plt.imshow(np.fliplr(rgb)*2.0, interpolation='nearest', origin='lower')
 #         img= ax.imshow(np.fliplr(z_color_enh), interpolation='nearest', origin='lower')
-        map = Basemap(projection='merc', llcrnrlon=4.5, llcrnrlat=47.8, urcrnrlon=14.5,urcrnrlat=54.5, resolution='f', ax=ax) #Germany
-    
-    
-        x,y = map(lon,lat)  
-        cs = map.pcolormesh(x,y,z_color_enh,shading='auto')
+        myd03_Latitude_data = np.fliplr(lat) # https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
+        myd03_Longitude_data = np.fliplr(lon)
+        myd03_Latitude_shape = myd03_Latitude_data.shape
+        print('=====lat shape before', lat.shape)
+        print('=====lat shape after', myd03_Latitude_shape)
+        z = z_color_enh / 256.0
+        z = np.fliplr(z)
+        print('=====z rgb max', np.max(z)  )
 
+        myd03_Latitude = lat
+        myd03_Longitude = lon
+        proj = ccrs.Mercator()
+
+        lat_long_grid = proj.transform_points(                 
+                    x = myd03_Longitude_data,
+                    y = myd03_Latitude_data,
+                    src_crs = proj)
+
+        print('lat_long_grid',lat_long_grid.shape)
+        x_igrid = lat_long_grid[:,:,0] ## long
+        y_igrid = lat_long_grid[:,:,1] ## lat
+
+        print('------lat min, max')
+        print(np.min(myd03_Latitude))
+        print(np.max(myd03_Latitude))    
+        print('------lon min, max')
+        print(np.min(myd03_Longitude_data))
+        print(np.max(myd03_Longitude_data))
+        
+        geod = ccrs.Geodetic()
+
+#         xul, yul = proj.transform_point(
+#             x = myd03_Longitude_data[0,0],
+#             y = myd03_Latitude_data[0,0],
+#             src_crs = geod)
+
+#         xlr, ylr = proj.transform_point(
+#             x = myd03_Longitude_data[myd03_Latitude_shape[0]-1,myd03_Latitude_shape[1]-1],
+#             y = myd03_Latitude_data[myd03_Latitude_shape[0]-1,myd03_Latitude_shape[1]-1],
+#             src_crs = geod)
+        xul = np.min(myd03_Longitude_data)
+        xlr = np.max(myd03_Longitude_data)
+
+        yul = np.min(myd03_Latitude)
+        ylr = np.max(myd03_Latitude)
+
+
+
+        z_igrid_01 = np.zeros((along_track, cross_trak))
+        z_igrid_02 = np.zeros((along_track, cross_trak))
+        z_igrid_03 = np.zeros((along_track, cross_trak))
+
+        z_igrid_01[:,:] = z[:,:,0]
+        z_igrid_02[:,:] = z[:,:,1]
+        z_igrid_03[:,:] = z[:,:,2]
+
+        x1_igrid = x_igrid.ravel()
+        y1_igrid = y_igrid.ravel()
+
+        z_igrid_01 = z_igrid_01.ravel()
+        z_igrid_02 = z_igrid_02.ravel()
+        z_igrid_03 = z_igrid_03.ravel()
+
+        xy1_igrid = np.vstack((x1_igrid, y1_igrid)).T
+        xi, yi = np.mgrid[xul:xlr:1000j, yul:ylr:1000j]
+
+        z_01 = griddata(xy1_igrid, z_igrid_01, (xi, yi), method='nearest')
+        z_02 = griddata(xy1_igrid, z_igrid_02, (xi, yi), method='nearest')
+        z_03 = griddata(xy1_igrid, z_igrid_03, (xi, yi), method='nearest')
+        
+        THRESHOLD = 0.2
+        tree = cKDTree(xy1_igrid)
+        arr_x = _ndim_coords_from_arrays((xi, yi))
+        dists, indexes = tree.query(arr_x)
+        z_01[dists > THRESHOLD] = np.nan
+        z_02[dists > THRESHOLD] = np.nan
+        z_03[dists > THRESHOLD] = np.nan
+
+        rgb_projected = np.zeros((1000, 1000,3))
+
+        rgb_projected[:,:,0] = z_01[:,:]
+        rgb_projected[:,:,1] = z_02[:,:]
+        rgb_projected[:,:,2] = z_03[:,:]
+
+        whereAreNaNs = np.isnan(rgb_projected)
+        rgb_projected[whereAreNaNs] = 0.
+        print('max(rgb_projected', np.max(rgb_projected)  )
+
+        min_long = 4.5 # np.min(myd03_Longitude_data)
+        max_long = 14.5 #np.max(myd03_Longitude_data)
+
+        min_lat = 47.8 #np.min(myd03_Latitude)
+        max_lat = 54.5 #np.max(myd03_Latitude)
+
+
+        proj = ccrs.Mercator()
+        offset = 0.0
+        ease_extent = [min_long-offset, 
+                       max_long+offset, 
+                       min_lat-offset, 
+                       max_lat+offset]
+        ax = plt.axes(projection=proj)
+        ax.set_extent(ease_extent, crs=proj) 
+        swe_extent = [xul, xlr, yul, ylr]
+#         # ax.gridlines(color='gray', linestyle='--')
+        ax.coastlines(linewidth=0.8)
+        ax.imshow(np.rot90(np.fliplr(rgb_projected)), extent=swe_extent, transform=proj, origin='lower', aspect=1.7)
+    
+    
+            
+        # x,y = m(lon,lat)  
+        # # cs = m.imshow(np.rot90(np.fliplr(z_color_enh)),origin='lower') ##why 90 is neeed with the nc file saved mmm check it for the comparations of channels
+        # cs = m.imshow((np.fliplr(z_color_enh)), interpolation='nearest', origin='lower')
+
+        # m.imshow(np.rot90(np.fliplr(rgb_projected)), origin='lower')
+        
         
 #    img = plt.imshow((rgb), interpolation='nearest', origin='lower')
-    
-    l = [int(i) for i in np.linspace(0,cross_trak,6)]
-    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
 
-    l = [int(i) for i in np.linspace(0,along_track,9)]
-    plt.yticks(l, l, rotation=0, fontsize=11 )
 
     if name_plot == "simulation":
         plt.title('Simulation RGB reflectance', fontsize=16)
@@ -444,7 +570,9 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lon, lat):
 
     ax.set_yticklabels([])
     ax.set_xticklabels([])
-    
+
+    plt.tight_layout()
+
     #plt.show()    
     name_output = "{}/{}_RGB_image.png".format(out_file,name_plot) 
     fig.savefig(name_output) 
@@ -454,7 +582,10 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lon, lat):
     plt.close()          
     
 
-def rgb_image(out_file, myd021km_file):
+def rgb_image(out_file, myd021km_file, lat, lon):
+    '''
+    RGB MODIS
+    '''
     #https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
     selected_sds = myd021km_file.select('EV_250_Aggr1km_RefSB')
     selected_sds_attributes = selected_sds.attributes()
@@ -525,7 +656,7 @@ def rgb_image(out_file, myd021km_file):
 
     
 #     plot_rgb_image(along_track, cross_trak, RGB, out_file, name_plot = "total")
-    plot_rgb_image(along_track, cross_trak, z, out_file, name_plot = "total")
+    plot_rgb_image(along_track, cross_trak, z, out_file, name_plot = "total", lat = lat, lon = lon)
 
 
 
