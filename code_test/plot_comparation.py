@@ -81,7 +81,7 @@ def main():
     #arg('--rttov-path', type = str, default = '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-msg-1-to-36.nc', help = 'Path of the dataset')
     arg('--rttov-path-rad', type = str, default = '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
         
-    arg('--MODIS-path', type = str, default = '/home/jvillarreal/Documents/phd/dataset/MODIS_Germany_radiances_MYD021KM.A2013122.1140.061.2018046032403.nc', help = 'Path of the output' )
+    arg('--MODIS-path', type = str, default = '/home/jvillarreal/Documents/phd/dataset/MODIS_Germany_refl_emis_MYD021KM.A2013122.1140.061.2018046032403.nc', help = 'Path of the output' )
     arg('--path-output', type = str, default = '/home/jvillarreal/Documents/phd/output', help = 'Path of the output' )
     arg('--type-variable', type = str, default = 'radiance', help = 'radiance, refl_emiss, rgb' )
 
@@ -100,7 +100,7 @@ def main():
 
     MODIS_ds = xr.open_dataset(args.MODIS_path).compute()
     
-    # rttov_variable = np.zeros((np.shape(rttov_ds_rad['Radiance_total'].values)))
+    rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
 
     MODIS_variable = np.zeros((3, np.shape(MODIS_ds['lat'].values)[0], np.shape(MODIS_ds['lat'].values)[1]))
     # print(3, np.shape(MODIS_ds['lat'].values)[0], np.shape(MODIS_ds['lat'].values)[1])
