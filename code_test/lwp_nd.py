@@ -45,22 +45,25 @@ def plot_distribution_variable(variable, lat, lon, fig, ax, title_plot,vmin, vma
     ax.set_ylabel('Latitude', labelpad=33,fontsize=14)
 
         
-def lwp_nd_input_ICON(out_file,variable ,path_ICON):
+def lwp_nd_input_ICON(path_output ,path_ICON):
     '''
     input:
     variable: name of the variable of 2 dimensions
     '''
     ds = xr.open_dataset(path_ICON).compute()
+    
+    
     print(ds)           #heightxlatxlon  HxW
     lwp_2013_a = ds['clwvi'].values[9:,:] #kg m**-2     #thereare nand en la parte baje check why 2d los demas 3D
     lwp_2013 = lwp_2013_a*1000 # g/m^2 Liquid water path
     qnc_2013 = ds['qnc'].values[:,9:,:] #kg-1    
-    T_2013 = ds['ta'].values[:,9:,:]    
+    T_2013 = ds['ta'].values[:,9:,:]     #testtt dataaa!! instead of values
     q_2013 = ds['hus'].values[:,9:,:]   
-    p_2013 = ds['pres'].values[:,9:,:]    
+    p_2013  = ds['pres'].values[:,9:,:]    
     clw_2013 = ds['clw'].values[:,9:,:]     #kg/kg[:,9:,:]
     lat = ds['lat'].values[9:,]
     lon = ds['lon'].values[:]
+    height = ds['height'].values[:]
 
     ####convert cdnc in m^-3####################
     T_c =  T_2013 - 273.15
@@ -122,14 +125,14 @@ def lwp_nd_input_ICON(out_file,variable ,path_ICON):
 
 #     cbar=fig.colorbar(pcm,ax=ax)
 #     #plt.show()
-#     fig.savefig(out_file+'/'+variable+".png") 
+#     fig.savefig(path_output+'/'+variable+".png") 
 #     plt.close()
     fig, (ax0, ax1) = plt.subplots(nrows=2)
     plot_distribution_variable(lwp_2013, lat, lon, fig, ax0, 'LWP',vmin=100, vmax = 1200 )
     
     plot_distribution_variable(max_cdnc_2013_cm, lat, lon,fig, ax1, 'Nd',vmin=0, vmax = 800 )
     plt.tight_layout()
-    figure_name = '{}/LWP-Nd.png'.format(out_file) #aca pasarr con todo path
+    figure_name = '{}/LWP-Nd.png'.format(path_output) #aca pasarr con todo path
                    
     fig.savefig(figure_name) 
     plt.close()   
@@ -148,9 +151,9 @@ def lwp_nd_input_ICON(out_file,variable ,path_ICON):
     #print('===========Nd max and min == ', np.max(N), np.min(N))
     #print('================L (height 120, lat 57, lon 227) 0.000282827845990412 == ',L[119, 56, 226])
 
+    ds.close()
     
-    
-    return max_cdnc_2013_cm, lwp_2013, lat, lon
+    return p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height
     
 def get_joint_histgram(nx, ny, xmin, xmax, ymin, ymax, x, y):
     """
@@ -246,7 +249,7 @@ def main():
     # output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data="ex_data")
     
     
-    max_cdnc_2013_cm, lwp_2013, lat, lon = lwp_nd_input_ICON(out_file = path_output, variable = 'clwvi' , path_ICON = path_ICON)
+    p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height = lwp_nd_input_ICON(path_output = path_output,  path_ICON = path_ICON)
     
 
 
@@ -425,7 +428,7 @@ def main():
             lwp_dfs_mk_T[m] = yedges_mid[j]
 
             m=m+1
-    print("=========values_edge x,y,cps", np.shape(xedges_mid), np.shape(yedges_mid), np.shape(cps_mk_new_T) )
+    print("=========values_edge x,y,cps_mk_new_T", np.shape(xedges_mid), np.shape(yedges_mid), np.shape(cps_mk_new_T) )
     # spl = UnivariateSpline(np.exp(xedges), avg_lwps_mk_T)
     # ax4.plot(xedges, spl(xs), 'b', lw=3)
     
@@ -496,7 +499,64 @@ def main():
 #     cs = ax.contourf(x_mid, y_mid, jh, cmap='Greys')
 #     fig.colorbar(cs, ax=ax, label='PDF (%)')
 #     plt.show()
+
+###$$$$$$$$$$$$$$$$$$$$$$$$hhhhh$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+###$$$$$$$$$$$$$$$$$$$$$$$$meeeee$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+      # definitions for the axes
+    left, width = 0.1, 0.85
+    bottom, height = 0.3, 0.52
+    spacing = 0.005
+
+    rect_scatter = [left, bottom, width, height]
+    rect_histx = [left, bottom - 0.13 - spacing, width-0.17, 0.13]
+   
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_axes(rect_scatter)
+    ax_histx = fig.add_axes(rect_histx, sharex=ax)
+
+        # no labels
+    ax.tick_params(axis="x", labelbottom=False)
+    # ax_histx.tick_params(axis="y", labelleft=False)
+    ax.tick_params(direction='in', top=True, right=True)
+    ax_histx.tick_params(direction='in', top=True, right=True)
+    #ax.set_ylabel('$\it{N}$$\mathregular{_d}$ (cm$\mathregular{^{-3}}$)')
+    print("=========values_edge x,y,cps", np.shape(xedges_mid), np.shape(yedges_mid), np.shape(cps_2013) )
+
+    cs = ax.contourf(xedges_mid,yedges_mid, cps_mk_new_T.T, cmap='jet') #Greys #np.exp(xedges_mid),np.exp(yedges_mid), 
+
+    df = pd.DataFrame({'LWP': np.log(np.float_(y)),'Nd': np.log(np.float_(x))})
+
+    # print(df.AI,df.Nd)
+    nx = 30
+    ny = 35
     
+    fig.colorbar(cs, ax=ax, label='PDF (%)')
+    ax.set_ylabel('LWP (gm$\mathregular{^{-2}}$)')
+    ax.set_yticks(np.log(np.array([5, 10, 50, 300, 1000])))
+    ax.set_yticklabels(['5', '10', '50', '300', '1000'])
+    
+    dict_PDF = get_PDF_bin_range(df['Nd'], np.linspace(np.log(5), np.log(800), nx+1))
+    ax_histx.plot(dict_PDF['x'], dict_PDF['pdf'], color='black', linewidth=3)
+    ax_histx.fill_between(dict_PDF['x'], 0, dict_PDF['pdf'], facecolor='w', alpha=0.7, hatch = 'x')
+
+    plt.xticks(np.log(np.array([5, 10, 50, 300,800])),np.array([5, 10, 50, 300,800]).astype(str))
+
+    
+    ax_histx.set_xlabel('$\it{N}$$\mathregular{_d}$ (cm$\mathregular{^{-3}}$)')
+    ax_histx.set_ylabel('PDF (%)')
+
+    
+    
+    plt.tight_layout()
+    figure_name = '{}/relation_LWP-Nd-density-me.png'.format(path_output) #aca pasarr con todo path
+                   
+    fig.savefig(figure_name) 
+    plt.close()                
+###$$$$$$$$$$$$
+###$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$hhhhh$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ 
+        
+
+### ***************************************************************
     df = pd.DataFrame({'LWP': np.log(np.float_(y)),'Nd': np.log(np.float_(x))})
 
     # print(df.AI,df.Nd)
@@ -513,7 +573,7 @@ def main():
 
 
     # definitions for the axes
-    left, width = 0.1, 0.85
+    left, width = 0.12, 0.85
     bottom, height = 0.3, 0.52
     spacing = 0.005
 
@@ -577,6 +637,7 @@ def main():
                    
     fig.savefig(figure_name) 
     # plt.show()
+    
     
     
 if __name__ == '__main__':

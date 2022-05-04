@@ -16,7 +16,7 @@ from sklearn.decomposition import PCA
 
 
 
-def pair_plot(name_plot,X,n_components,out_file):    
+def pair_plot(name_plot,X,n_components,path_output):    
     Bandnames = {str(i): f"Band {i+1}" for i in range(n_components)}
 
     a = sns.pairplot(pd.DataFrame(X[:,:n_components],
@@ -24,7 +24,7 @@ def pair_plot(name_plot,X,n_components,out_file):
                          diag_kind='kde',plot_kws={"s": 3})
     a.fig.suptitle(name_plot, y=1.00)
     plt.tight_layout()
-    a.savefig("{}/{}.png".format(out_file,name_plot)) 
+    a.savefig("{}/{}.png".format(path_output,name_plot)) 
     
     plt.close()
     
@@ -54,7 +54,7 @@ def cov_eigval_numpy(X_scaled):
         
     return PC,var_exp,cum_var_exp
 
-def variance_numpy_plot(name_plot,var_exp,cum_var_exp,n_components, out_file): 
+def variance_numpy_plot(name_plot,var_exp,cum_var_exp,n_components, path_output): 
     fig, ax = plt.subplots()
     plt.bar(range(1,n_components+1), var_exp, alpha=0.5, align='center',
             label='Individual explained variance')
@@ -63,11 +63,11 @@ def variance_numpy_plot(name_plot,var_exp,cum_var_exp,n_components, out_file):
              color='red')
     plt.ylabel('Explained variance ratio')
     plt.xlabel('Principal component index')
-    fig.savefig("{}/{}.png".format(out_file,name_plot)) 
+    fig.savefig("{}/{}.png".format(path_output,name_plot)) 
 
     plt.close()
 
-def variance_sklearn_plot(name_plot,pca,n_components, out_file):
+def variance_sklearn_plot(name_plot,pca,n_components, path_output):
     fig, ax = plt.subplots()
 
     plt.bar(range(1,n_components+1), pca.explained_variance_ratio_,
@@ -78,16 +78,16 @@ def variance_sklearn_plot(name_plot,pca,n_components, out_file):
              color='red')
     plt.ylabel('Explained variance ratio')
     plt.xlabel('Principal Components')
-    fig.savefig("{}/{}.png".format(out_file,name_plot)) 
-
+    fig.savefig("{}/{}.png".format(path_output,name_plot)) 
+    print("{}/{}.png".format(path_output,name_plot))
     plt.close()
     
     
-def PCA_calculation(X_scaled,name_plot,n_pca,out_file):
+def PCA_calculation(X_scaled,name_plot,n_pca,path_output):
     #     ###########numpy PCA####################################################
     PC,var_exp,cum_var_exp=cov_eigval_numpy(X_scaled)
-    #     pair_plot("Pair plot of PCs",PC,n_bands,out_file)    
-    #     variance_numpy_plot(name_plot,var_exp,cum_var_exp,n_components, out_file)
+    #     pair_plot("Pair plot of PCs",PC,n_bands,path_output)    
+    #     variance_numpy_plot(name_plot,var_exp,cum_var_exp,n_components, path_output)
     #     ###########end numpy PCA####################################################
 
     # fit_transform() is used to calculate the PCAs from training data
@@ -99,9 +99,11 @@ def PCA_calculation(X_scaled,name_plot,n_pca,out_file):
     print(f" sum of explained variance ratios of the PCs : {n_pca,sum(pca.explained_variance_ratio_)}")
     print("explained variance:",np.cumsum(pca.explained_variance_ratio_))  ########????????????????? check here what is the PC
 
-    variance_sklearn_plot(name_plot,pca,n_pca, out_file) 
+    variance_sklearn_plot(name_plot,pca,n_pca, path_output) 
     
-    return PC, X_reduced
+    # pk.dump(PC, open("pca_target.pkl","wb"))
+
+    return PC, X_reduced, pca #PC = X_reduced
 
 def convert_3D(PC, img_shape,n_bands): 
     #https://towardsdatascience.com/principal-component-analysis-in-depth-understanding-through-image-visualization-892922f77d9f
@@ -125,7 +127,7 @@ def convert_3D(PC, img_shape,n_bands):
     return PC_2d_Norm
                      
                      
-def plot_PC(PC_2d_Norm, n_bands, out_file):
+def plot_PC(PC_2d_Norm, n_bands, path_output):
     
     fig,axes = plt.subplots(6,6,figsize=(50,23),sharex='all',sharey='all')
     fig.subplots_adjust(wspace=0.1, hspace=0.15)
@@ -137,7 +139,7 @@ def plot_PC(PC_2d_Norm, n_bands, out_file):
         axes[i].set_title('PC '+str(i+1),fontsize=25)
         axes[i].axis('off')
     #fig.delaxes(axes[-1])                 
-    fig.savefig("{}/Intensities PC.png".format(out_file)) 
+    fig.savefig("{}/Intensities PC.png".format(path_output)) 
     plt.close() 
                      
                      
@@ -159,7 +161,7 @@ def reconstruction_img(X_reduced,pca,img_shape,n_bands):
     return X_img_reduced
 
 
-def dataframe_csv(variable, colum, out_file):
+def dataframe_csv(variable, colum, path_output, name_file):
   ### input (a,b,c) a will be the columns of the dataframe
   # datafram  row = b*c, colum = a  
     print('dataframe', np.shape(colum), np.shape(variable))
@@ -180,7 +182,7 @@ def dataframe_csv(variable, colum, out_file):
     pd.set_option('display.float_format', lambda x: '%.1f' % x)
     df.columns= colum
     
-    df.describe().to_csv(out_file + "/radiances_description.csv")    
+    df.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
     print("ok dataframe")
     
     return df_after_drop
@@ -189,7 +191,7 @@ def dataframe_csv(variable, colum, out_file):
     #df_after_drop=df_after_drop.dropna( subset = [1,5,7,18,37], how = 'any' )
     #ic(df_after_drop.count())  
     
-def plot_image_PC(PC_2d_Norm, image_3bands,  out_file):
+def plot_image_PC(PC_2d_Norm, image_3bands,  path_output):
 
     #img=img.transpose(1,2,0)
     print(np.shape(image_3bands),np.min(image_3bands),np.max(image_3bands))
@@ -208,10 +210,10 @@ def plot_image_PC(PC_2d_Norm, image_3bands,  out_file):
     
    # #ax2=plt.subplot(132)
     ##ax2.imshow(mask_overlay(img2, mask))
-    fig.savefig("{}/image_rgb_3PC.png".format(out_file)) 
+    fig.savefig("{}/image_rgb_3PC.png".format(path_output)) 
     plt.close()
 
-def plot_image_rgb(image_3bands,  out_file):
+def plot_image_rgb(image_3bands,  path_output):
 
     print(np.shape(image_3bands),np.min(image_3bands),np.max(image_3bands))
 
@@ -222,12 +224,12 @@ def plot_image_rgb(image_3bands,  out_file):
 
     plt.title('RGB')
 
-    fig.savefig("{}/image_rgb_T12.png".format(out_file)) 
+    fig.savefig("{}/image_rgb_T12.png".format(path_output)) 
     plt.close()
     
 from sklearn.cluster import KMeans
     
-def get_kmeans(nbands, imagery, out_file):
+def get_kmeans(nbands, imagery, path_output):
     #import natsort
 
     # create an empty array in which each column will hold a flattened band
@@ -264,11 +266,11 @@ def get_kmeans(nbands, imagery, out_file):
     plt.title('kmeans predictions')
     plt.axis('off')
     
-    fig.savefig("{}/kmeans predictions_{}PC_{}cluster.png".format(out_file,n_PC,n_cluster)) 
+    fig.savefig("{}/kmeans predictions_{}PC_{}cluster.png".format(path_output,n_PC,n_cluster)) 
 
     plt.close()
 
-def n_clusters(nbands, imagery, out_file):
+def n_clusters(nbands, imagery, path_output):
     # create an empty array in which each column will hold a flattened band
     flat_data = np.empty((imagery.shape[0]*imagery.shape[1], nbands)) #x,y
 
@@ -293,9 +295,12 @@ def n_clusters(nbands, imagery, out_file):
     plt.xlabel('k')
     plt.ylabel('Sum_of_squared_distances')
     plt.title('Elbow Method For Optimal k')
-    fig.savefig("{}/Elbow Method For Optimal.png".format(out_file)) 
+    fig.savefig("{}/Elbow Method For Optimal.png".format(path_output)) 
 
     plt.close()
+    
+    
+    
     
 def main():
     parser = argparse.ArgumentParser()
@@ -308,7 +313,7 @@ def main():
     args = parser.parse_args()
 
     fname_in = args.path_in 
-    out_file = args.path_out 
+    path_output = args.path_out 
     
     
     name_file = fname_in +args.name_input
@@ -319,6 +324,7 @@ def main():
     
     sds_refl= filehdf.select('bt_refl_total').get() #radiances
     #####################################################
+    '''
     ##### MODIS  (Bands 1 4 3 | Red, Green, Blue) 
 #     R = sds_data_radiances[0,:,]/ np.max(sds_data_radiances[0,:,:])
 #     G = sds_data_radiances[3,:,]/ np.max(sds_data_radiances[3,:,:])
@@ -350,14 +356,14 @@ def main():
     
     ic("r,g,b max", np.max(R),np.max(G), np.max(B))
     ic("After scaled -mean/std:", pd.DataFrame(RGB.reshape(-1,3)).describe() )
-    plot_image_rgb(image_3bands = RGB,  out_file = out_file)
+    plot_image_rgb(image_3bands = RGB,  plot_image_rgb = plot_image_rgb)
 
     #####################################################
 
     
     '''    
     
-    sys.stdout = open(out_file+'/log_PCA_radiances.txt','wt')
+    sys.stdout = open(path_output+'/log_PCA_radiances.txt','wt')
 
     # Read data
 
@@ -396,8 +402,8 @@ def main():
     img_shape = np.shape(X_train) #x,y,ch
 #     print(df_train.shape,img_shape,df_train.max()) ##########no seria adecuado serapar asi xq de ahi nose como obtener una imagen
      ###### flat ###########################
-
-    df = dataframe_csv(variable = X_train, colum = bands, out_file = out_file)
+    name_file = 'radiances_output'
+    df = dataframe_csv(variable = X_train, colum = bands, path_output = path_output, name_file = name_file)
  
     print("Before scaled -mean/std:", df.describe())
 
@@ -418,26 +424,24 @@ def main():
 
    # X_scaled =X_scaled[:,[0,25]] # test JQ
     
-    PC, X_reduced = PCA_calculation(X_scaled,name_plot,n_pca,out_file)
-    
-    
+    PC, X_reduced, pca = PCA_calculation(X_scaled,name_plot,n_pca,path_output)
+
                      
     PC_2d_Norm = convert_3D(PC, img_shape,n_bands)
     
     ic("PC_2d_Norm x,y,xh:", np.shape(PC_2d_Norm))
-    plot_PC(PC_2d_Norm, n_bands, out_file)
+    plot_PC(PC_2d_Norm, n_bands, path_output)
     # Rearranging 1-d arrays to 2-d arrays of image size
 
 
-    plot_image_PC(PC_2d_Norm= PC_2d_Norm, image_3bands = RGB,  out_file = out_file)
+    plot_image_PC(PC_2d_Norm= PC_2d_Norm, image_3bands = RGB,  path_output = path_output)
 
     #X_reduced_test = pca.transform(scale(X_test))[:,:1]
 
-    get_kmeans(nbands = n_bands, imagery = PC_2d_Norm, out_file = out_file)
+    get_kmeans(nbands = n_bands, imagery = PC_2d_Norm, path_output = path_output)
     
-    #n_clusters(nbands = n_bands, imagery = PC_2d_Norm, out_file = out_file)
+    #n_clusters(nbands = n_bands, imagery = PC_2d_Norm, path_output = path_output)
 
-    '''
     sys.stdout.close()
     
    # ic.disable()
