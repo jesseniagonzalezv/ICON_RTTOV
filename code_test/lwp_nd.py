@@ -61,6 +61,10 @@ def lwp_nd_input_ICON(path_output ,path_ICON):
     q_2013 = ds['hus'].values[:,9:,:]   
     p_2013  = ds['pres'].values[:,9:,:]    
     clw_2013 = ds['clw'].values[:,9:,:]     #kg/kg[:,9:,:]
+    cli_2013 = ds['cli'].values[:,9:,:]     #kg/kg[:,9:,:]
+    t_s = ds['t_s'].values[9:,:]
+    topography = ds['topography_c'].values[9:,:]
+    
     lat = ds['lat'].values[9:,]
     lon = ds['lon'].values[:]
     height = ds['height'].values[:]
@@ -151,9 +155,19 @@ def lwp_nd_input_ICON(path_output ,path_ICON):
     #print('===========Nd max and min == ', np.max(N), np.min(N))
     #print('================L (height 120, lat 57, lon 227) 0.000282827845990412 == ',L[119, 56, 226])
 
-    ds.close()
     
-    return p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height
+    df_2d = pd.DataFrame({  #falta normalizar
+        "qnc_max" : max_cdnc_2013_cm.flatten(),
+        "lwp": lwp_2013.flatten(),
+        "t_s": t_s.flatten(),
+        "tography": topography.flatten()
+        
+    }) 
+        
+
+    return ds, p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height
+    # return p_2013, T_2013, q_2013, clw_2013, cli_2013, df_2d, lat, lon, height
+
     
 def get_joint_histgram(nx, ny, xmin, xmax, ymin, ymax, x, y):
     """

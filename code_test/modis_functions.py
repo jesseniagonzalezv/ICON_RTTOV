@@ -568,8 +568,8 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lat, lon):
     else:
         plt.title('MODIS RGB reflectance', fontsize=16)
 
-    ax.set_yticklabels([])
-    ax.set_xticklabels([])
+    # ax.set_yticklabels([])
+    # ax.set_xticklabels([])
 
     plt.tight_layout()
 
