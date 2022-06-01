@@ -26,7 +26,7 @@ def get_rmse_array(truth, pred):
 
 def get_training_inputs(path_output, path_ICON):
     
-    p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON) #obtain more outputs of it
+    ds, p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON) #obtain more outputs of it
 
     # call pca, new to run it again and kmwasn but also adapt inputs array of inputs, array of outpus, usig of reference code of clibenc
     # train_files = [ "T09", "T12" ]
@@ -129,13 +129,17 @@ def from2to3d(x):
   
 
 def test_random_forest(train_x, train_y, test_x, test_y):
-    rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
-                      max_depth=None, max_features='auto', max_leaf_nodes=None,
-                      max_samples=None, min_impurity_decrease=0.0,
-                      min_impurity_split=None, min_samples_leaf=1,
-                      min_samples_split=2, min_weight_fraction_leaf=0.0,
-                      n_estimators=100, n_jobs=None, oob_score=False,
-                      random_state=None, verbose=0, warm_start=False) 
+    # rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
+    #                   max_depth=None, max_features='auto', max_leaf_nodes=None,
+    #                   max_samples=None, min_impurity_decrease=0.0,
+    #                   min_impurity_split=None, min_samples_leaf=1,
+    #                   min_samples_split=2, min_weight_fraction_leaf=0.0,
+    #                   n_estimators=100, n_jobs=None, oob_score=False,
+    #                   random_state=None, verbose=0, warm_start=False)
+    rf_model = RandomForestRegressor(bootstrap=False, random_state = 0, max_features='auto', n_estimators=200, min_samples_split= 100, min_samples_leaf=4,max_depth=1,  criterion='mse')
+                                     
+                                
+        
 # rf_model = RandomForestRegressor( random_state=0, bootstrap=False, max_features='auto', **{'n_estimators': 200, 'min_samples_split': 100, 'min_samples_leaf': 4,  'max_depth': 1})
     
     rf_pcs = rf_model.fit(train_x, train_y)
@@ -225,8 +229,8 @@ def get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_
     '''
     PC_output (latxlon, number_pcs)
     '''
-    p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON_test) #obtain more outputs of it
-
+    ds,p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON_test) #obtain more outputs of it
+    ds.close()
     train_inputs_variables_3D = { "pres": p_2013, "ta": T_2013, "hus":q_2013} #(height, lat, lon)
 
 #     whereAreNaNs = np.isnan(max_cdnc_2013_cm)
@@ -240,7 +244,7 @@ def get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_
         "lwp": lwp_2013.flatten()
     }) #0,1,2,3,....row,row,row,
 
-    df = df.fillna(0)
+    df = df.fillna(0) #instead of doing it he told me that i should eliminate it 
 
         
     test_df= scaler_2D.transform(df)        
