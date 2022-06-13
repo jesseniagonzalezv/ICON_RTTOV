@@ -72,7 +72,10 @@ def lwp_nd_input_ICON(path_output ,path_ICON):
     ####convert cdnc in m^-3####################
     T_c =  T_2013 - 273.15
 
-    esat_2013 = (0.611* np.exp(17.3*T_c))/(T_c+237.3)
+
+    esat_2013 = 0.611* np.exp((17.3*T_c)/(T_c+237.3))
+    
+        
     #esat_2013 = np.ma.masked_array(esat_2013,  esat_2013 == 0) ## check it!!!!!!!!
     esat_2013 = esat_2013*1000.0
     qs_2013 =  0.622* (esat_2013/p_2013)
@@ -139,7 +142,7 @@ def lwp_nd_input_ICON(path_output ,path_ICON):
     figure_name = '{}/LWP-Nd.png'.format(path_output) #aca pasarr con todo path
                    
     fig.savefig(figure_name) 
-    plt.close()   
+    # plt.close()   
         
     print('===============T_2013 (height 120, lat 57, lon 227) cm: 276.151153564453 == ', T_2013[119, 56, 226])
     print('===============T_c (height 120, lat 57, lon 227) cm: 3.00115356445315== ', T_c[119, 56, 226])
