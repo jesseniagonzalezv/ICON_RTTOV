@@ -47,7 +47,6 @@ do
 
 	#-------------------------------------------------------------------------------
 #<<COMMENT2
-#COMMENT2
 
 	echo ------------------- 3D generating-----------------------------
 	cdo -seltimestep,$seltimestep_3D -selvar,pres,ta,hus,qnc,clc,cli,clw $path_data_in/$fname3d_in $path_data_out/$fout3d_1 #select one step  qr,qs  clc=tca  cfraction cloud fraction for simple cloud 0-1  clc=cloud cover is in%
@@ -114,10 +113,13 @@ do
 	echo --------------------------subset-----------------------------------
 	ncks -d lon,8.,9. -d lat,48.,50.  $path_data_out/data_rttov_T${hr}.nc $path_data_out/subset_rttov_T${hr}.nc #Npoint=182*59=10738
 	echo --------- $path_data_out/subset_rttov_T${hr}.nc subset--------------- 
-
+#COMMENT2
 	echo ------------------------Generate Reff, Nd, LWP ---------------------------------------------------
-    python reff_lwp_Nd.py --path-in $path_data_out/data_rttov_T${hr}.nc --path-out 'home/b/b381362/output/output_ICON/data_rttov_T${hr}_Reff.nc'
-	echo --------- 'home/b/b381362/output/output_ICON/data_rttov_T${hr}_Reff.nc' subset--------------- 
+    python reff_lwp_Nd.py --path-in $path_data_out/data_rttov_T${hr}.nc --path-out "/home/b/b381362/output/output_ICON"
+    
+
+
+	echo --------- "$path_data_out/data_rttov_T${hr}_Reff.nc" generated--------------- 
 
 	done
 exit 0
