@@ -50,7 +50,7 @@ do
 #COMMENT2
 
 	echo ------------------- 3D generating-----------------------------
-	cdo -seltimestep,$seltimestep_3D -selvar,pres,ta,hus,qnc,clc $path_data_in/$fname3d_in $path_data_out/$fout3d_1 #select one step  cli,clw,qr,qs  clc=tca  cfraction cloud fraction for simple cloud 0-1  clc=cloud cover is in%
+	cdo -seltimestep,$seltimestep_3D -selvar,pres,ta,hus,qnc,clc,cli,clw $path_data_in/$fname3d_in $path_data_out/$fout3d_1 #select one step  qr,qs  clc=tca  cfraction cloud fraction for simple cloud 0-1  clc=cloud cover is in%
 	ncwa -a time $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov
 	cdo  -setattribute,clc@units="fraction" -selname,clc -divc,100 $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc #convert percent to fraction
 	cdo replace $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc $path_data_out/$fout3d_1
