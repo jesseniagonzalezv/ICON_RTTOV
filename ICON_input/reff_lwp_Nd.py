@@ -5,9 +5,6 @@ from scipy.special import gamma
 from matplotlib import pyplot as plt
 import os
 
-#def flip_values_3D_coarse(ds, fname_out):
-#	ds.to_netcdf(fname_out) # rewrite to netcdf
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -84,7 +81,8 @@ def main():
     print('===============pv_2013 (height 120, lat 57, lon 227) 768.797909793127 == ', pv_2013[119, 56, 226])
     print('===============pd_2013 (height 120, lat 57, lon 227) 75166.5302152069 == ', pd_2013[119, 56, 226])
     print('===============rho_2013 (height 120, lat 57, lon 227) 0.954250058491486 == ', rho_2013[119, 56, 226]) #3 mmmmm no sale igual
-    print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', cdnc_2013_cm[119, 56, 226])
+    print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', ds.Nd[119, 56, 226])
+    print('===============Reff (height 120, lat 57, lon 227) 17.20 um == ', ds.Reff[119, 56, 226])
 
 
     fig = plt.figure(figsize=(20, 8))
@@ -94,6 +92,7 @@ def main():
     ds.Nd_max[9:,:].where(ds.Nd_max != 0).plot(cmap = "jet",vmin=2, vmax = 800) 
     file_name = os.path.splitext(os.path.basename(fname))[0]    
     figure_name = os.sep.join([args.path_out,file_name +'_LWP-Nd.png'])    
+    print(figure_name)
     fig.savefig(figure_name) 
 
     
@@ -105,6 +104,7 @@ def main():
     ds.Reff[119,9:,].plot(cmap = "jet",vmin=0, vmax = 40)
     figure_name = os.sep.join([args.path_out,file_name +'_Nd-Reff.png'])    
     fig.savefig(figure_name) 
+    print(figure_name)
 
     ds.close()
 
