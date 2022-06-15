@@ -9,9 +9,9 @@ import os
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the initial data is')
+    arg('--path-in', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12.nc', help='path of the initial data is')
     # arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the initial data is')
-    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/output/input_icon', help='path of the copied data is' ) 
+    # arg('--path-out', type=str, default='/home/b/b381362/output/output_ICON', help='path of the copied data is' )  #/home/jvillarreal/Documents/phd/output/input_icon
     args = parser.parse_args()
     fname = args.path_in 
     name_output= os.path.splitext(fname)[0]
@@ -21,7 +21,7 @@ def main():
     esat_2013 = 0.611* np.exp((17.3*T_c)/(T_c+237.3))*1000.0
     #esat_2013 = np.ma.masked_array(esat_2013,  esat_2013 == 0) ## check it!!!!!!!!
     pres = np.ma.masked_array(ds.pres,  ds.pres == 0) ## check it!!!!!!!!
-    qs_2013 =  0.622* (esat_2013/pres)
+    qs_2013 =  0.622* (esat_2013/pres) #this is diffent compared with Alexandre code
     r_2013 = ds.hus/(1 - ds.hus)
     RH_2013 = 100*(r_2013/qs_2013)
     pv_2013 = (esat_2013 * RH_2013)/100.0
@@ -84,27 +84,6 @@ def main():
     print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', ds.Nd[119, 56, 226])
     print('===============Reff (height 120, lat 57, lon 227) 17.20 um == ', ds.Reff[119, 56, 226])
 
-
-    fig = plt.figure(figsize=(20, 8))
-    plt.subplot(121)
-    ds.lwp[9:,:].where(ds.lwp != 0).plot(cmap = "jet",vmin=2, vmax = 1200)
-    plt.subplot(122)
-    ds.Nd_max[9:,:].where(ds.Nd_max != 0).plot(cmap = "jet",vmin=2, vmax = 800) 
-    file_name = os.path.splitext(os.path.basename(fname))[0]    
-    figure_name = os.sep.join([args.path_out,file_name +'_LWP-Nd.png'])    
-    print(figure_name)
-    fig.savefig(figure_name) 
-
-    
-    fig = plt.figure(figsize=(20, 8))
-    plt.subplot(121)
-    ds.Nd[119,9:,:].where(ds.Nd[119,9:,:] != 0).plot(cmap = "jet") #,vmin=2, vmax = 800)
-    plt.subplot(122)
-    # ds.Reff[119].where(ds.Reff != 0).plot(cmap = "jet",vmin=2, vmax = 800)
-    ds.Reff[119,9:,].plot(cmap = "jet",vmin=0, vmax = 40)
-    figure_name = os.sep.join([args.path_out,file_name +'_Nd-Reff.png'])    
-    fig.savefig(figure_name) 
-    print(figure_name)
 
     ds.close()
 
