@@ -11,7 +11,7 @@ path_data_in=/work/bb1036/b381362/dataset_icon #/home/jvillarreal
 path_data_out=/work/bb1036/b381362/dataset #/poorgafile1/climate/hdcp2/2013 
 
 
-for hr in 12 #09 12 15 
+for hr in  12 #09 #10 15 #12 
 
 do
 
@@ -43,9 +43,15 @@ do
 	fout_surface=$path_data_out/surface_DOM03.nc
 	fout_surface_rttov=$path_data_out/surface_DOM03_rttov.nc
 
-	seltimestep_3D=7 #7 #20130502.5208333=12:30pm T12 timestep 7
-	seltimestep_2D=31 #20130502.5208333=12:30pm T12 timestep 13
-
+#for the other cases I use the first timestep , in some cases it is not the same chech it
+    #T12
+	seltimestep_3D=7 #20130502.5208333=12:30pm T12 
+	seltimestep_2D=31 #20130502.5208333=12:30pm T12
+    
+    # other time
+#	seltimestep_3D=1
+#	seltimestep_2D=1
+    
 	#-------------------------------------------------------------------------------
 #<<COMMENT1
 
@@ -57,7 +63,9 @@ do
 	echo ------------------- 3D generated-----------------------------
 
 	echo ------------------- verify 3D--------------------------------
-	python verify_data.py --path-data-in $path_data_in/$fname3d_in  --path-data-copied $path_data_out/$fout3d_1  --type-data '3D'
+	python verify_data.py --path-data-in  $path_data_in/$fname3d_in   --path-data-copied $path_data_out/$fout3d_1  --type-data '3D' --n-timestep $seltimestep_3D 
+
+
     rm $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc
 	echo ---------------- $path_data_out/$fout3d_1 verified ------------
 
@@ -111,20 +119,25 @@ do
 #	ncks -d lon,8.,9. -d lat,48.,50.  $path_data_out/data_rttov_T${hr}.nc $path_data_out/subset_rttov_T${hr}.nc #Npoint=182*59=10738
 #	echo --------- $path_data_out/subset_rttov_T${hr}.nc subset-------------------------------------------- 
 
-	echo ------------------------Generate Reff, Nd, LWP ---------------------------------------------------
-    python reff_lwp_Nd.py --path-in $path_data_out/data_rttov_T${hr}.nc
-	echo --------- "$path_data_out/data_rttov_T${hr}_Reff.nc" generated------------------------------------ 
-
+#COMMENT1
 
 	echo -------------------------- Cut the buttom part ---------------------------------------------------
-    ncks -d lat,47.599,54.5  $path_data_out/data_rttov_T${hr}_Reff.nc  $path_data_out/data_rttov_T${hr}_Reff_cut.nc
-	echo ------------- "$path_data_out/data_rttov_T${hr}_Reff_cut.nc" generated---------------------------- 
+    ncks -d lat,47.599,54.5  $path_data_out/data_rttov_T${hr}.nc  $path_data_out/data_rttov_T${hr}_dropupbottom.nc
+	echo ------------- "$path_data_out/data_rttov_T${hr}_dropupbottom.nc" generated---------------------------- 
+    
+    
+	echo ------------------------Generate Reff, Nd, LWP ---------------------------------------------------
+    python reff_lwp_Nd.py --path-in $path_data_out/data_rttov_T${hr}_dropupbottom.nc
+	echo --------- generated------------------------------------ 
+
+    rm $path_data_out/data_rttov_T${hr}_dropupbottom.nc
+
 #COMMENT1
        
-    python ../code_test/plot_lwp_Nd_reff.py --path-in $path_data_out/data_rttov_T${hr}_Reff_cut.nc --path-out "/home/b/b381362/output/output_ICON"
+    python ../code_test/plot_lwp_Nd_reff.py --path-in $path_data_out/data_rttov_T${hr}_dropupbottom_Reff.nc --path-out $HOME/output/output_ICON # first create the folders output/output_ICON
 
 
-	done
-    exit 0
+done
+exit 0
 
 

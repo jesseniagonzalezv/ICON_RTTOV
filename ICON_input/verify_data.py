@@ -12,10 +12,6 @@ def main():
     arg('--hour', type=str, default=12, help='timestep 2=13 or 3D=7')
     #arg('--flip-div100', type=str, default='y', help='y= it was flip and divided between 100, n=not flip, not divided' )
     args = parser.parse_args()
-    
-
-
-
 
 
     fname = args.path_data_ini 
