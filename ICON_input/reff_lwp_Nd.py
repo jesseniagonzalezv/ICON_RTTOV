@@ -85,7 +85,7 @@ def main():
     print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', ds.Nd[119, 56-9, 226])
     print('===============Reff (height 120, lat 57, lon 227) 17.20 um == ', ds.Reff[119, 56-9, 226])
 
-    print("Reff min, max", reff_2013.values.min(), np.max(reff_2013.values))
+    print("Reff min, max", reff_2013.min(), np.max(reff_2013))
 
     print("generated the next file:", name_output)
 

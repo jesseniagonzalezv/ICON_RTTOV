@@ -11,7 +11,7 @@ path_data_in=/work/bb1036/b381362/dataset_icon #/home/jvillarreal
 path_data_out=/work/bb1036/b381362/dataset #/poorgafile1/climate/hdcp2/2013 
 
 
-for hr in  12 #09 #10 15 #12 
+for hr in 12 #09 10 15  #12
 
 do
 
@@ -53,22 +53,27 @@ do
 #	seltimestep_2D=1
     
 	#-------------------------------------------------------------------------------
-#<<COMMENT1
 
 	echo ------------------- 3D generating-----------------------------
 	cdo -seltimestep,$seltimestep_3D -selvar,pres,ta,hus,qnc,clc,cli,clw $path_data_in/$fname3d_in $path_data_out/$fout3d_1 #select one step  qr,qs  clc=tca  cfraction cloud fraction for simple cloud 0-1  clc=cloud cover is in%
 	ncwa -a time $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov #delete the dimension time of the variables
-	cdo  -setattribute,clc@units="fraction" -selname,clc -divc,100 $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc #convert percent to fraction
+    rm $path_data_out/$fout3d_1
+	cdo -selname,clc -divc,100 $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc #convert percent to fraction
 	cdo replace $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc $path_data_out/$fout3d_1
+    rm $path_data_out/$fout3d_rttov
+
+    cdo -setattribute,clc@units="fraction" $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov
+    rm $path_data_out/$fout3d_1 #$path_data_out/clc_variable.nc
+
 	echo ------------------- 3D generated-----------------------------
 
 	echo ------------------- verify 3D--------------------------------
-	python verify_data.py --path-data-in  $path_data_in/$fname3d_in   --path-data-copied $path_data_out/$fout3d_1  --type-data '3D' --n-timestep $seltimestep_3D 
+	python verify_data.py --path-data-in  $path_data_in/$fname3d_in   --path-data-copied $path_data_out/$fout3d_rttov  --type-data '3D' --n-timestep $seltimestep_3D 
 
 
-    rm $path_data_out/$fout3d_rttov $path_data_out/clc_variable.nc
-	echo ---------------- $path_data_out/$fout3d_1 verified ------------
+	echo ---------------- $path_data_out/$fout3d_rttov verified ------------
 
+#<<COMMENT1
 
 	echo --------------------- 2D generating----------------------------
 	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,tas,huss,ps,u_10m,v_10m,t_s $path_data_in/$fname2d_in $path_data_out/$fout2d_1 #variables 2m tas, huss, ps=surface_air_pressure t_s surface skin temperature?=weighted temperature of ground surface  gridding of the variables
@@ -98,7 +103,7 @@ do
 
 	
 	echo ------------------------ Merging all the data------------------------------
-	cdo -O -f nc merge  $path_data_out/$fout3d_1 $path_data_out/$fout2d_rttov $fout_landmask_rttov $fout_surface $path_data_out/data_rttov_T${hr}.nc  
+	cdo -O -f nc merge  $path_data_out/$fout3d_rttov $path_data_out/$fout2d_rttov $fout_landmask_rttov $fout_surface $path_data_out/data_rttov_T${hr}.nc  
 	echo --------- $path_data_out/data_rttov_T${hr}.nc generated input RTTOV --------
 
 
@@ -110,7 +115,7 @@ do
 	python verify_data.py --path-data-in $path_data_out/$fout2d_1  --path-data-copied $path_data_out/data_rttov_T${hr}.nc --type-data '2D' --n-timestep $seltimestep_2D --hour ${hr}
 	python verify_data.py --path-data-in $fout_surface  --path-data-copied $path_data_out/data_rttov_T${hr}.nc --type-data 'surface'
 
-    rm $path_data_out/$fout3d_1 
+    rm $path_data_out/$fout3d_rttov 
     rm $path_data_out/$fout2d_lwp $path_data_out/$fout2d_1 $path_data_out/$fout2d_rttov 
     rm $fout_landmask_rttov
     rm $fout_surface
@@ -119,7 +124,6 @@ do
 #	ncks -d lon,8.,9. -d lat,48.,50.  $path_data_out/data_rttov_T${hr}.nc $path_data_out/subset_rttov_T${hr}.nc #Npoint=182*59=10738
 #	echo --------- $path_data_out/subset_rttov_T${hr}.nc subset-------------------------------------------- 
 
-#COMMENT1
 
 	echo -------------------------- Cut the buttom part ---------------------------------------------------
     ncks -d lat,47.599,54.5  $path_data_out/data_rttov_T${hr}.nc  $path_data_out/data_rttov_T${hr}_dropupbottom.nc
@@ -135,6 +139,7 @@ do
 #COMMENT1
        
     python ../code_test/plot_lwp_Nd_reff.py --path-in $path_data_out/data_rttov_T${hr}_dropupbottom_Reff.nc --path-out $HOME/output/output_ICON # first create the folders output/output_ICON
+#COMMENT1
 
 
 done
