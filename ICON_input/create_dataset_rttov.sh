@@ -63,7 +63,7 @@ do
     rm $path_data_out/$fout3d_rttov
 
     cdo -setattribute,clc@units="fraction" $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov
-    rm $path_data_out/$fout3d_1 #$path_data_out/clc_variable.nc
+    rm $path_data_out/$fout3d_1 $path_data_out/clc_variable.nc
 
 	echo ------------------- 3D generated-----------------------------
 
