@@ -144,17 +144,20 @@ def lwp_nd_input_ICON(path_output ,path_ICON):
     fig.savefig(figure_name) 
     # plt.close()   
         
-    print('===============T_2013 (height 120, lat 57, lon 227) cm: 276.151153564453 == ', T_2013[119, 56, 226])
-    print('===============T_c (height 120, lat 57, lon 227) cm: 3.00115356445315== ', T_c[119, 56, 226])
-    print('===============esat_2013 (height 120, lat 57, lon 227) 758.360598313415 == ', esat_2013[119, 56, 226]) #3 mmmmm no sale igual
-    print('===============p_2013 (height 120, lat 57, lon 227)75935.328125 == ', p_2013[119, 56, 226]) 
-    print('===============qs_2013 (height 120, lat 57, lon 227) 0.00621186875461262  == ', qs_2013[119, 56, 226]) #3 mmmmm no sale igual
-    print('===============r_2013 (height 120, lat 57, lon 227) 0.0062973626597643 == ', r_2013[119, 56, 226])
-    print('===============RH_2013 (height 120, lat 57, lon 227) 101.376299283339 == ', RH_2013[119, 56, 226])
-    print('===============pv_2013 (height 120, lat 57, lon 227) 768.797909793127 == ', pv_2013[119, 56, 226])
-    print('===============pd_2013 (height 120, lat 57, lon 227) 75166.5302152069 == ', pd_2013[119, 56, 226])
-    print('===============rho_2013 (height 120, lat 57, lon 227) 0.954250058491486 == ', rho_2013[119, 56, 226]) #3 mmmmm no sale igual
-    print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', cdnc_2013_cm[119, 56, 226])
+        
+    print("next values only work with data_rttov_12 and with lat 57 is before cutting otherwise 57-9=48 (i eliminate the buttom 9 pixels of lat)")
+
+    print('===============T_2013 (height 120, lat 57, lon 227) cm: 276.151153564453 == ', ds.ta[119, 56-9, 226])
+    print('===============T_c (height 120, lat 57, lon 227) cm: 3.00115356445315== ', T_c[119, 56-9, 226])
+    print('===============esat_2013 (height 120, lat 57, lon 227) 758.360598313415 == ', esat_2013[119, 56-9, 226]) 
+    print('===============p_2013 (height 120, lat 57, lon 227)75935.328125 == ', ds.pres[119, 56-9, 226]) 
+    print('===============qs_2013 (height 120, lat 57, lon 227) 0.00621186875461262  == ', qs_2013[119, 56-9, 226]) 
+    print('===============r_2013 (height 120, lat 57, lon 227) 0.0062973626597643 == ', r_2013[119, 56-9, 226])
+    print('===============RH_2013 (height 120, lat 57, lon 227) 101.376299283339 == ', RH_2013[119, 56-9, 226])
+    print('===============pv_2013 (height 120, lat 57, lon 227) 768.797909793127 == ', pv_2013[119, 56-9, 226])
+    print('===============pd_2013 (height 120, lat 57, lon 227) 75166.5302152069 == ', pd_2013[119, 56-9, 226])
+    print('===============rho_2013 (height 120, lat 57, lon 227) 0.954250058491486 == ', rho_2013[119, 56-9, 226]) 
+    print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', ds.Nd[119, 56-9, 226])
     #print('===========Nd max and min == ', np.max(N), np.min(N))
     #print('================L (height 120, lat 57, lon 227) 0.000282827845990412 == ',L[119, 56, 226])
 
@@ -266,7 +269,7 @@ def main():
     # output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data="ex_data")
     
     
-    p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height = lwp_nd_input_ICON(path_output = path_output,  path_ICON = path_ICON)
+    ds,p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height = lwp_nd_input_ICON(path_output = path_output,  path_ICON = path_ICON)
     
 
 
