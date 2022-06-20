@@ -15,22 +15,22 @@ def main():
 
     ds=xr.open_dataset(fname)
     
-    fig = plt.figure(figsize=(20, 8))
+    fig = plt.figure(figsize=(14, 4))
     plt.subplot(121)
-    ds.lwp.where(ds.lwp != 0).plot(cmap = "jet",vmin=2, vmax = 1200)
+    ds.lwp.where(ds.lwp != 0).plot(cmap = "cividis",vmin=2, vmax = 1200)
     plt.subplot(122)
-    ds.Nd_max.where(ds.Nd_max != 0).plot(cmap = "jet",vmin=2, vmax = 800) 
+    ds.Nd_max.where(ds.Nd_max != 0).plot(cmap = "cividis",vmin=2, vmax = 800) 
     figure_name = os.sep.join([args.path_out,file_name +'_LWP-Nd.png'])    
     print(figure_name)
     fig.savefig(figure_name) 
 
     
-    fig = plt.figure(figsize=(20, 8))
+    fig = plt.figure(figsize=(14, 4))
     plt.subplot(121)
-    ds.Nd[119,:,:].where(ds.Nd[119,:,:] != 0).plot(cmap = "jet") #,vmin=2, vmax = 800)
+    ds.Nd[119,:,:].where(ds.Nd[119,:,:] != 0).plot(cmap = "cividis") #,vmin=2, vmax = 800)
     plt.subplot(122)
     # ds.Reff[119].where(ds.Reff != 0).plot(cmap = "jet",vmin=2, vmax = 800)
-    ds.Reff[119,:,].plot(cmap = "jet",vmin=0, vmax = 40)
+    ds.Reff[119,:,].plot(cmap = "cividis",vmin=0, vmax = 40)
     figure_name = os.sep.join([args.path_out,file_name +'_Nd-Reff.png'])    
     fig.savefig(figure_name) 
     print(figure_name)
