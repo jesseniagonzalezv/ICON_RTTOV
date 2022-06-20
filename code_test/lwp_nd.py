@@ -14,6 +14,7 @@ from matplotlib.ticker import MaxNLocator
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.interpolate import UnivariateSpline
+import os
 
 def sigmoid(x, L ,x0, k, b):
 
@@ -44,30 +45,29 @@ def plot_distribution_variable(variable, lat, lon, fig, ax, title_plot,vmin, vma
     ax.set_xlabel('Longitude', labelpad=20,fontsize=14)
     ax.set_ylabel('Latitude', labelpad=33,fontsize=14)
 
-        
+########################################################################################3       
 def lwp_nd_input_ICON(path_output ,path_ICON):
     '''
-    input:
-    variable: name of the variable of 2 dimensions
+    It was replaced with the code reff_lwp_Nd
     '''
     ds = xr.open_dataset(path_ICON).compute()
     
     
     print(ds)           #heightxlatxlon  HxW
-    lwp_2013_a = ds['clwvi'].values[9:,:] #kg m**-2     #thereare nand en la parte baje check why 2d los demas 3D
+    lwp_2013_a = ds['clwvi'].values #kg m**-2     # I cut it: thereare nand en la parte baje check why 2d los demas 3D [:,9:,:]
     lwp_2013 = lwp_2013_a*1000 # g/m^2 Liquid water path
-    qnc_2013 = ds['qnc'].values[:,9:,:] #kg-1    
-    T_2013 = ds['ta'].values[:,9:,:]     #testtt dataaa!! instead of values
-    q_2013 = ds['hus'].values[:,9:,:]   
-    p_2013  = ds['pres'].values[:,9:,:]    
-    clw_2013 = ds['clw'].values[:,9:,:]     #kg/kg[:,9:,:]
-    cli_2013 = ds['cli'].values[:,9:,:]     #kg/kg[:,9:,:]
-    t_s = ds['t_s'].values[9:,:]
-    topography = ds['topography_c'].values[9:,:]
+    qnc_2013 = ds['qnc'].values#kg-1    
+    T_2013 = ds['ta'].values     #testtt dataaa!! instead of values
+    q_2013 = ds['hus'].values   
+    p_2013  = ds['pres'].values    
+    clw_2013 = ds['clw'].values     #kg/kg
+    cli_2013 = ds['cli'].values    #kg/kg
+    t_s = ds['t_s'].values
+    topography = ds['topography_c'].values
     
-    lat = ds['lat'].values[9:,]
-    lon = ds['lon'].values[:]
-    height = ds['height'].values[:]
+    lat = ds['lat'].values
+    lon = ds['lon'].values
+    height = ds['height'].values
 
     ####convert cdnc in m^-3####################
     T_c =  T_2013 - 273.15
@@ -173,7 +173,7 @@ def lwp_nd_input_ICON(path_output ,path_ICON):
 
     return ds, p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height
     # return p_2013, T_2013, q_2013, clw_2013, cli_2013, df_2d, lat, lon, height
-
+###########################################################################################################
     
 def get_joint_histgram(nx, ny, xmin, xmax, ymin, ymax, x, y):
     """
@@ -251,16 +251,20 @@ def main():
     arg = parser.add_argument
     arg('--path-ICON', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the dataset is the ICON simulations')
 #     arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/VF-output-test-modis-T12.nc', help='path of the dataset the output of RTTOV')
-    arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/output-test-2-modis.nc', help='path of the dataset the output of RTTOV')
+    #arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/output-test-2-modis.nc', help='path of the dataset the output of RTTOV')
 
-    arg('--path-output', type=str, default='/home/jvillarreal/Documents/phd/output', help='path of the output data is')
+    arg('--path-output', type=str, default='/home/jvillarreal/Documents/phd/output/output_ICON', help='path of the output data is')
 
     args = parser.parse_args()
 
     path_ICON = args.path_ICON
-    path_OUTPUT_RTTOV = args.path_OUTPUT_RTTOV 
+    #path_OUTPUT_RTTOV = args.path_OUTPUT_RTTOV 
     path_output=args.path_output
     
+    ds=xr.open_dataset(path_ICON)
+    file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] #data_rttov_T12_dropupbottom_Reff.nc delete _Reff
+
+
     #plot_input_ICON(out_file=path_output,variable="lwp",path_ICON=path_ICON)
 #     output_RTTOV(out_file=path_output,variable='brdf',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV)
 #     output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV)
@@ -269,7 +273,7 @@ def main():
     # output_RTTOV(out_file=path_output,variable='Y',path_OUTPUT_RTTOV=path_OUTPUT_RTTOV,input_data="ex_data")
     
     
-    ds,p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height = lwp_nd_input_ICON(path_output = path_output,  path_ICON = path_ICON)
+    #ds,p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height = lwp_nd_input_ICON(path_output = path_output,  path_ICON = path_ICON)
     
 
 
@@ -288,10 +292,19 @@ def main():
 #     plt.title("lwp_2013_gm2")
 
 #     plt.show()
+    print("Nd_max min, max", ds.Nd_max.min(), np.max(ds.Nd_max))
+    print("lwp min, max", ds.lwp.min(), np.max(ds.lwp))
 
     # Creating dataset
-    x =  max_cdnc_2013_cm.flatten() #np.random.normal(size = 500000) 
-    y =  lwp_2013.flatten() #x * 3 + 4 * np.random.normal(size = 500000) #
+    x = ds.Nd_max.values.flatten()
+    y = ds.lwp.values.flatten()
+    
+    
+    x = np.ma.masked_array(x,  x == 0) ## check it!!!!!!!!
+    y = np.ma.masked_array(y,  y == 0) ## check it!!!!!!!!
+    
+    # x =  max_cdnc_2013_cm.flatten() #np.random.normal(size = 500000) 
+    # y =  lwp_2013.flatten() #x * 3 + 4 * np.random.normal(size = 500000) #
     
     
 
@@ -460,7 +473,7 @@ def main():
   
 
     
-    c = ax4.contourf( cps_mk_new_T.T, cmap='jet') #Greys #np.exp(xedges_mid),np.exp(yedges_mid), 
+    c = ax4.contourf( cps_mk_new_T.T, cmap='viridis') #Greys #np.exp(xedges_mid),np.exp(yedges_mid), 
 
     # ax4.set_xticks(np.log(np.array([5, 10, 50, 300, 800])))
     # ax4.set_xticklabels(['5', '10', '50', '300', '800'])
@@ -498,7 +511,8 @@ def main():
 
 
     plt.tight_layout()
-    figure_name = '{}/relation_LWP-Nd.png'.format(path_output) #aca pasarr con todo path
+    figure_name = '{}_relation_LWP-Nd.png'.format(os.sep.join([path_output,file_name]))    
+
                    
     fig.savefig(figure_name) 
     plt.close()   
@@ -542,7 +556,7 @@ def main():
     #ax.set_ylabel('$\it{N}$$\mathregular{_d}$ (cm$\mathregular{^{-3}}$)')
     print("=========values_edge x,y,cps", np.shape(xedges_mid), np.shape(yedges_mid), np.shape(cps_2013) )
 
-    cs = ax.contourf(xedges_mid,yedges_mid, cps_mk_new_T.T, cmap='jet') #Greys #np.exp(xedges_mid),np.exp(yedges_mid), 
+    cs = ax.contourf(xedges_mid,yedges_mid, cps_mk_new_T.T, cmap='viridis') #Greys #np.exp(xedges_mid),np.exp(yedges_mid), 
 
     df = pd.DataFrame({'LWP': np.log(np.float_(y)),'Nd': np.log(np.float_(x))})
 
@@ -568,8 +582,8 @@ def main():
     
     
     plt.tight_layout()
-    figure_name = '{}/relation_LWP-Nd-density-me.png'.format(path_output) #aca pasarr con todo path
-                   
+    figure_name = '{}_relation_LWP-Nd-density-me.png'.format(os.sep.join([path_output,file_name]))    
+               
     fig.savefig(figure_name) 
     plt.close()                
 ###$$$$$$$$$$$$
@@ -632,7 +646,7 @@ def main():
     # the contour plot:
     # X, Y = np.meshgrid(x_bins[:-1]+(x_bins[1]-x_bins[0])/2, dict_jh['x'])
     print("+++++print contourf x,y,jh", np.shape(x_mid), np.shape(y_mid), np.shape(jh))
-    cs = ax.contourf(x_mid, y_mid, jh, cmap='jet') #Greys
+    cs = ax.contourf(x_mid, y_mid, jh, cmap='viridis') #Greys
     #cs = ax.pcolormesh(x_mid, y_mid, jh, cmap='jet') #Greys
 
     fig.colorbar(cs, ax=ax, label='PDF (%)')
@@ -653,8 +667,8 @@ def main():
     plt.xticks(np.log(np.array([5, 10, 50, 300,800])),np.array([5, 10, 50, 300,800]).astype(str))
 
     # ax.set_tight_layout(True)
-    figure_name = '{}/relation_LWP-Nd-density-H.png'.format(path_output) #aca pasarr con todo path
-                   
+    figure_name = '{}_relation_LWP-Nd-density-H.png'.format(os.sep.join([path_output,file_name]))    
+
     fig.savefig(figure_name) 
     # plt.show()
     
