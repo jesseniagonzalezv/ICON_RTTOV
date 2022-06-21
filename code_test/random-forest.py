@@ -8,7 +8,7 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
 from lwp_nd import lwp_nd_input_ICON
-from PCA_radiances import PCA_calculation, variance_sklearn_plot, dataframe_csv, convert_3D
+from PCA_radiances import PCA_calculation, variance_sklearn_plot, dataframe_csv #, convert_3D
 
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import make_scorer, check_scoring, mean_squared_error
@@ -95,8 +95,8 @@ def get_training_inputs(path_output, path_ICON):
         X_pca, pca = PCA_calculation(var_scaled, name_plot,n_pca, path_output)
         pca_3D.append(pca)
         
-        print( 'Original shape: {}'.format(str(PC.shape)))
-        print( 'Original shape: {}'.format(str(X_pca.shape)))
+        # print( 'Original shape: {}'.format(str(PC.shape)))
+        print( 'Original shape: {}'.format(str(var.shape)))
         print( 'Reduced shape: {}'.format(str(X_pca.shape)))
         principalDf = pd.DataFrame(data = X_pca
              , columns = [f"{key}_PCA_{i}" for i in range(n_pca)])
@@ -147,9 +147,15 @@ def test_random_forest(train_x, train_y, test_x, test_y):
     #                   min_samples_split=2, min_weight_fraction_leaf=0.0,
     #                   n_estimators=100, n_jobs=None, oob_score=False,
     #                   random_state=None, verbose=0, warm_start=False)
-    rf_model = RandomForestRegressor(bootstrap=False, random_state = 0, max_features='auto', n_estimators=200, min_samples_split= 100, min_samples_leaf=4,max_depth=1,  criterion='mse')
+    # rf_model = RandomForestRegressor(bootstrap=False, random_state = 0, max_features='auto', n_estimators=200, min_samples_split= 100, min_samples_leaf=4,max_depth=1,  criterion='mse')
                                      
-                                
+    rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
+                      max_depth=None, max_features='auto', max_leaf_nodes=None,
+                      max_samples=None, min_impurity_decrease=0.0,
+                      min_impurity_split=None, min_samples_leaf=1,
+                      min_samples_split=2, min_weight_fraction_leaf=0.0,
+                      n_estimators=100, n_jobs=None, oob_score=False,
+                      random_state=None, verbose=0, warm_start=False)                              
         
 # rf_model = RandomForestRegressor( random_state=0, bootstrap=False, max_features='auto', **{'n_estimators': 200, 'min_samples_split': 100, 'min_samples_leaf': 4,  'max_depth': 1})
     
