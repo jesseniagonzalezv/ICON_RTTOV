@@ -15,6 +15,8 @@ from sklearn.metrics import make_scorer, check_scoring, mean_squared_error
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import metrics
+from sklearn.model_selection import train_test_split
+import os
 
 
 def get_rmse_array(truth, pred):
@@ -25,8 +27,16 @@ def get_rmse_array(truth, pred):
 
 
 def get_training_inputs(path_output, path_ICON):
-    
-    ds, p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON) #obtain more outputs of it
+    ds = xr.open_dataset(path_ICON).compute()
+   
+    p_2013 = ds.pres.values #/100 #convert to hPa
+    T_2013 = ds.ta.values
+    q_2013 = ds.hus.values
+    max_cdnc_2013_cm = ds.Nd_max.values
+    lwp_2013 = ds.lwp.values
+    #lat = ds.lat
+    #lon = ds.lot
+    #height = ds.height
 
     # call pca, new to run it again and kmwasn but also adapt inputs array of inputs, array of outpus, usig of reference code of clibenc
     # train_files = [ "T09", "T12" ]
@@ -34,54 +44,57 @@ def get_training_inputs(path_output, path_ICON):
     # train_inputs_variables_2d = [ "t2m", 'q2m', 'p_surf', 'u_surf', 'v_surf', 't_skin', 'h_surf', 'lat', 'lon', 'qnc', 'lwp']
     # train_inputs_variables_3d = [ "p", "t", "q", 'tca', 'lwc', 'iwc']
     
-    train_inputs_variables_2D = ['qnc_max', 'lwp'] #(lat, lon)
+    train_inputs_variables_2D = ['Nd_max', 'lwp'] #(lat, lon)
     train_inputs_variables_3D = { "pres": p_2013, "ta": T_2013, "hus":q_2013} #(height, lat, lon)
     n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
-
-    print('==== variables 2D', np.shape(max_cdnc_2013_cm))
-    print('--after flat', np.shape(max_cdnc_2013_cm.flatten()))
-
-
-    print("==========Nan values=====================\n")
-
-
-    
+    ############ variables 2D ######################################
     df = pd.DataFrame({  #falta normalizar
-        "qnc_max" : max_cdnc_2013_cm.flatten(),
-        "lwp": lwp_2013.flatten()
-    }) #0,1,2,3,....row,row,row,
+    "Nd_max" : ds.Nd_max.values.flatten(),
+    "LWP" : ds["lwp"].values.flatten() }) 
 
+    print("============== 2D variables statistics ==================== ")
+    print("LWP shape: {}".format(np.shape(ds["lwp"].values)))
+    print(df.describe())#if i mask i will have nan instead of Nd<2 and LWP<o
+    print("LWP min: {}, max: {}".format(ds["lwp"].values.min(), np.max(ds["lwp"].values)))
+    print("Nd_max min: {}, max: {}".format(ds["Nd_max"].values.min(), np.max(ds["Nd_max"].values)))
     count_nan_in_df = pd.DataFrame(df).isnull().sum()
-    print (count_nan_in_df)  #can i used 0 in the lwp and nd?
-    df = df.fillna(0)
+    print ("=========print NaNs: \n", count_nan_in_df)  #can i used 0 in the lwp and nd?
+    # df = df.fillna(0) #there is not nan
+
+    print("============== 3D variables statistics ==================== ")
+    print("pres min: {}, max: {}, mean: {}".format(np.min(p_2013), np.max(p_2013), np.mean(p_2013)))
+    print("ta min: {}, max: {}, mean: {}".format(ds["ta"].values.min(), np.max(ds["ta"].values),ds["ta"].values.mean()))
+    print("hus min: {}, max: {}, mean: {}".format(ds["hus"].values.min(), np.max(ds["hus"].values), ds["hus"].values.mean()))
 
         
         
     scaler_2D = preprocessing.StandardScaler()# Fit on training set only.
     scaler_2D.fit(df)
 
-    training_input_variables_df = pd.DataFrame(scaler_2D.transform(df), columns = ["qnc_max", "lwp"]) 
+    training_input_variables_df = pd.DataFrame(scaler_2D.transform(df), columns = ["Nd_max", "lwp"]) 
 
-    # Combine with aerosol EOFs
+    # Get PC of the variables 3D
     scaler_3D = []
     pca_3D = []
 
     for key, var in train_inputs_variables_3D.items():  
-        var = var.transpose(1,2,0)
+        var = var.transpose(1,2,0) #lat,lot,heigh
         var_df = pd.DataFrame(var.reshape(-1, var.shape[2]))
         var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
         # scaler = preprocessing.StandardScaler().fit(var_df) 
-        scaler = preprocessing.StandardScaler()# Fit on training set only.        
+        scaler = preprocessing.StandardScaler()# Fit on training set only. 
         scaler_3D.append(scaler)
-
+        
         scaler.fit(var_df)
         var_scaled = scaler.transform(var_df)
         
         
         n_pca = n_pca_variables_3D[key] #150
         name_plot= "{}_PCA_variance_{}_variable".format(n_pca, key)
-        PC, X_pca, pca = PCA_calculation(var_scaled, name_plot,n_pca, path_output)
+        
+        X_pca, pca = PCA_calculation(var_scaled, name_plot,n_pca, path_output)
         pca_3D.append(pca)
+        
         print( 'Original shape: {}'.format(str(PC.shape)))
         print( 'Original shape: {}'.format(str(X_pca.shape)))
         print( 'Reduced shape: {}'.format(str(X_pca.shape)))
@@ -102,10 +115,8 @@ def get_training_inputs(path_output, path_ICON):
     #     training_input_variables_df=pd.concat([training_input_variables_df, var_df], axis=1)
 
 
-
+    print("================ dataframe =============================")
     training_input_variables_df.describe().to_csv(path_output + "/inputs_description.csv")    
-    print("ok dataframe")
-
     # count_nan 
     count_nan_in_df = training_input_variables_df.isnull().sum()
     print (count_nan_in_df)  #can i used 0 in the lwp and nd?
@@ -217,7 +228,7 @@ def read_input_target(rttov_path_rad, rttov_path_refl_emmis, path_output):
     name_plot= "PCA_variance_refl_emiss"
     n_pca = 6 #2 #test JQ 
     n_bands = len(rttov_bands) #2 #test JQ     
-    PC_output_all, X_reduced_output, pca = PCA_calculation(X_scaled,name_plot,n_pca, path_output)
+    X_reduced_output, pca = PCA_calculation(X_scaled,name_plot,n_pca, path_output) #PC_output_all
 
     principalDf = pd.DataFrame(data = X_reduced_output
              , columns = [f"PCA_{i}" for i in range(np.shape(X_reduced_output)[1])])
@@ -225,62 +236,63 @@ def read_input_target(rttov_path_rad, rttov_path_refl_emmis, path_output):
         
     return scaler, principalDf, pca
     
-def get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D):
-    '''
-    PC_output (latxlon, number_pcs)
-    '''
-    ds,p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON_test) #obtain more outputs of it
-    ds.close()
-    train_inputs_variables_3D = { "pres": p_2013, "ta": T_2013, "hus":q_2013} #(height, lat, lon)
+##################### no
+# def get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D):
+#     '''
+#     PC_output (latxlon, number_pcs)
+#     '''
+#     ds,p_2013, T_2013, q_2013, max_cdnc_2013_cm, lwp_2013, lat, lon, height= lwp_nd_input_ICON(path_output = path_output, path_ICON = path_ICON_test) #obtain more outputs of it
+#     ds.close()
+#     train_inputs_variables_3D = { "pres": p_2013, "ta": T_2013, "hus":q_2013} #(height, lat, lon)
 
-#     whereAreNaNs = np.isnan(max_cdnc_2013_cm)
-#     max_cdnc_2013_cm[whereAreNaNs] = 0
-#     whereAreNaNs = np.isnan(lwp_2013)
-#     lwp_2013[whereAreNaNs] = 0
+# #     whereAreNaNs = np.isnan(max_cdnc_2013_cm)
+# #     max_cdnc_2013_cm[whereAreNaNs] = 0
+# #     whereAreNaNs = np.isnan(lwp_2013)
+# #     lwp_2013[whereAreNaNs] = 0
     
 
-    df = pd.DataFrame({  #falta normalizar
-        "qnc_max" : max_cdnc_2013_cm.flatten(),
-        "lwp": lwp_2013.flatten()
-    }) #0,1,2,3,....row,row,row,
+#     df = pd.DataFrame({  #falta normalizar
+#         "qnc_max" : max_cdnc_2013_cm.flatten(),
+#         "lwp": lwp_2013.flatten()
+#     }) #0,1,2,3,....row,row,row,
 
-    df = df.fillna(0) #instead of doing it he told me that i should eliminate it 
+#     df = df.fillna(0) #instead of doing it he told me that i should eliminate it 
 
         
-    test_df= scaler_2D.transform(df)        
+#     test_df= scaler_2D.transform(df)        
 
-    testing_input_variables_df = pd.DataFrame(test_df, columns = ["qnc_max", "lwp"]) 
+#     testing_input_variables_df = pd.DataFrame(test_df, columns = ["qnc_max", "lwp"]) 
 
-    # Combine with aerosol EOFs
-    i = 0
-    for key, var in train_inputs_variables_3D.items():  
-        var = var.transpose(1,2,0)
-        var_df = pd.DataFrame(var.reshape(-1, var.shape[2]))
-        var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
+#     # Combine with aerosol EOFs
+#     i = 0
+#     for key, var in train_inputs_variables_3D.items():  
+#         var = var.transpose(1,2,0)
+#         var_df = pd.DataFrame(var.reshape(-1, var.shape[2]))
+#         var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
         
-        test_df= scaler_3D[i].transform(var_df)        
-        principalDf = pd.DataFrame(data = pca_3D[i].transform(test_df)
-             , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
-        testing_input_variables_df=pd.concat([testing_input_variables_df, principalDf], axis=1)
+#         test_df= scaler_3D[i].transform(var_df)        
+#         principalDf = pd.DataFrame(data = pca_3D[i].transform(test_df)
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
+#         testing_input_variables_df=pd.concat([testing_input_variables_df, principalDf], axis=1)
  
 
 
-        i+=1
+#         i+=1
         
-    return testing_input_variables_df
+#     return testing_input_variables_df
 
-def get_test_output(path_rttov_test, path_output, scaler, pca):
+# def get_test_output(path_rttov_test, path_output, scaler, pca):
     
-    y_test, rttov_bands = read_data_refl_emiss_rttov(path_rttov_test)
-    ###### flat ###########################
-    name_file = 'refl_emiss_test'
-    df = dataframe_csv(variable = y_test, colum = rttov_bands, path_output = path_output, name_file = name_file)
+#     y_test, rttov_bands = read_data_refl_emiss_rttov(path_rttov_test)
+#     ###### flat ###########################
+#     name_file = 'refl_emiss_test'
+#     df = dataframe_csv(variable = y_test, colum = rttov_bands, path_output = path_output, name_file = name_file)
     
     
-    test_df= scaler.transform(df)
-    test_df = pca.transform(test_df)
+#     test_df= scaler.transform(df)
+#     test_df = pca.transform(test_df)
     
-    return test_df
+#     return test_df
     
 def plot_target_prediction(target, prediction, path_output, name_plot):
     n_img = len(target)
@@ -340,10 +352,11 @@ def main():
     arg = parser.add_argument
     arg('--path-ICON', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the dataset is the ICON simulations')
 #     arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/VF-output-test-modis-T12.nc', help='path of the dataset the output of RTTOV')
-    arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/output-test-2-modis.nc', help='path of the dataset the output of RTTOV')
-    arg('--rttov-path-refl-emmis', type = str, default = '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
-    arg('--rttov-path-rad', type = str, default = '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
-    arg('--path_rttov_test', type = str, default = '/home/jvillarreal/Documents/phd/github/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
+    # arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/output/output-rttov/output-test-2-modis.nc', help='path of the dataset the output of RTTOV')
+    arg('--rttov-path-refl-emmis', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
+    arg('--rttov-path-rad', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
+    
+    arg('--path_rttov_test', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
     arg('--path_ICON_test', type = str, default = '/home/jvillarreal/Documents/phd/dataset/data_rttov_T09.nc', help = 'Path of the test-dataset ')
 
     arg('--path-output', type=str, default='/home/jvillarreal/Documents/phd/output/ML_output', help='path of the output data is')
@@ -352,61 +365,88 @@ def main():
 
     path_ICON = args.path_ICON
     path_output=args.path_output
-    path_OUTPUT_RTTOV = args.path_OUTPUT_RTTOV 
+    # path_OUTPUT_RTTOV = args.path_OUTPUT_RTTOV 
     rttov_path_refl_emmis = args.rttov_path_refl_emmis
     rttov_path_rad = args.rttov_path_rad
     path_rttov_test = args.path_rttov_test
     path_ICON_test = args.path_ICON_test
     
-    # train_outputs = ['pc1', 'pc2', 'pc3', 'pc4', 'pc5', 'pc6']
-
+    # ds=xr.open_dataset(path_ICON)
+    # file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] 
+########### Reading the input and output for the training #############
     train_x_df, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D = get_training_inputs(path_output,path_ICON)
+    
     scaler_Y, train_y_df, PCA_Y = read_input_target(rttov_path_rad, rttov_path_refl_emmis, path_output)
 
 
-    test_x_df = get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D)
-    test_y = get_test_output(path_rttov_test, path_output, scaler_Y, PCA_Y)
-
+    # test_x_df = get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D)
+    # test_y = get_test_output(path_rttov_test, path_output, scaler_Y, PCA_Y)
 
     count_nan_in_df = train_x_df.isnull().sum()
-    print ("--------training_input_variables_df-------",count_nan_in_df)  
+    print ("--------training_input_variables_df nan-------",count_nan_in_df)  
+
+    x_train, x_test, y_train, y_test = train_test_split(train_x_df, train_y_df, test_size=0.33, random_state=42)
 
 
+    # rf_pcs = test_random_forest(train_x = train_x_df,
+    #                                           train_y = train_y_df, 
+    #                                           test_x = test_x_df, 
+    #                                           test_y = test_y)
 
 
-    rf_pcs = test_random_forest(train_x = train_x_df,
-                                              train_y = train_y_df, 
-                                              test_x = test_x_df, 
-                                              test_y = test_y)
-
-
+    rf_pcs = test_random_forest(train_x = x_train,
+                                          train_y = y_train, 
+                                          test_x = x_test, 
+                                          test_y = y_test)
 
     
-    #####
-    score = rf_pcs.score(train_x_df, train_y_df)
+    
+    gt =  y_train 
+    pred = rf_pcs.predict(x_train)
+    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
+    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
+    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
+    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
+    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
+    print('Accuracy: \n', round(100*(1 - mape), 2))
+
+    gt =  y_test 
+    pred = rf_pcs.predict(x_test)
+    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
+    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
+    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
+    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
+    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
+    print('Accuracy: \n', round(100*(1 - mape), 2))
+
+    score = rf_pcs.score(x_train, y_train)
     print('score in training:', score)  
-
-    pred_pcs_train = rf_pcs.predict(train_x_df)
-    predicted_3D_train = from2to3d(pred_pcs_train)
-
-    #####
-    score = rf_pcs.score(test_x_df, test_y)
+    score = rf_pcs.score(x_test, y_test)
     print('score in testing:', score)
 
-    test_pred_pcs = rf_pcs.predict(test_x_df)
-    predicted_3D = from2to3d(test_pred_pcs)
-
+    #####
+    # score = rf_pcs.score(train_x_df, train_y_df)
+    # print('score in training:', score)  
+    # score = rf_pcs.score(test_x_df, test_y)
+    # print('score in testing:', score)
+    
+    # pred_pcs_train = rf_pcs.predict(train_x_df)
+    # predicted_3D_train = from2to3d(pred_pcs_train)
+    # test_pred_pcs = rf_pcs.predict(test_x_df)
+    # predicted_3D = from2to3d(test_pred_pcs)
+    
+    
     # xr_output = xr.Dataset(dict(refl_emis = m_out_pc1))
     # # save output to netcdf 
     # xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
 
     
-    train_y_3D = from2to3d(train_y_df.to_numpy())
-    plot_target_prediction(target = train_y_3D, prediction = predicted_3D_train, path_output = path_output, name_plot = 'target_pred_training')
+    # train_y_3D = from2to3d(train_y_df.to_numpy())
+    # plot_target_prediction(target = train_y_3D, prediction = predicted_3D_train, path_output = path_output, name_plot = 'target_pred_training')
 
 
-    target_3D = from2to3d(test_y)
-    plot_target_prediction(target_3D, predicted_3D, path_output, name_plot = 'target_pred_testing')
+    # target_3D = from2to3d(test_y)
+    # plot_target_prediction(target_3D, predicted_3D, path_output, name_plot = 'target_pred_testing')
 
 
     # permutation_test(x = train_x_df, y = train_y_df, model = rf_pcs)
