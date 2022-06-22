@@ -40,7 +40,7 @@ do
 	fout_landmask_rttov=$path_data_out/landmask_R0156m_rttov.nc
 
 	fname_surface=$path_data_in/GRID_default_3d_fine_DOM03_ML.nc
-	fout_surface=$path_data_out/surface_DOM03.nc
+	fout_surface=$path_data_out/surface_DOM03_${hr}.nc
 	fout_surface_rttov=$path_data_out/surface_DOM03_rttov.nc
 
 #for the other cases I use the first timestep , in some cases it is not the same chech it
@@ -53,7 +53,7 @@ do
 #	seltimestep_2D=1
     
 	#-------------------------------------------------------------------------------
-
+#<<COMMENT1
 	echo ------------------- 3D generating-----------------------------
 	cdo -seltimestep,$seltimestep_3D -selvar,pres,ta,hus,qnc,clc,cli,clw $path_data_in/$fname3d_in $path_data_out/$fout3d_1 #select one step  qr,qs  clc=tca  cfraction cloud fraction for simple cloud 0-1  clc=cloud cover is in%
 	ncwa -a time $path_data_out/$fout3d_1 $path_data_out/$fout3d_rttov #delete the dimension time of the variables
@@ -73,7 +73,7 @@ do
 
 	echo ---------------- $path_data_out/$fout3d_rttov verified ------------
 
-#<<COMMENT1
+
 
 	echo --------------------- 2D generating----------------------------
 	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,tas,huss,ps,u_10m,v_10m,t_s $path_data_in/$fname2d_in $path_data_out/$fout2d_1 #variables 2m tas, huss, ps=surface_air_pressure t_s surface skin temperature?=weighted temperature of ground surface  gridding of the variables
@@ -97,9 +97,13 @@ do
 	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,FR_LAND $fnameFR_LAND_in $fout_landmask_rttov #o,1 land,sea gridding
 	echo ----------- $fout_landmask_rttov generated-------------------
     
+#COMMENT1
+
 	echo ---------------- topography_c generating---------------------
-	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,topography_c $fname_surface $fout_surface #z_ifc,z_mc=create_nc_surface
-	echo ------------------ $fout_surface_rttov generated ------------
+	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,topography_c,z_ifc,z_mc $fname_surface $fout_surface #z_ifc,z_mc=create_nc_surface
+	echo ------------------ $fout_surface generated ------------
+
+#<<COMMENT2
 
 	
 	echo ------------------------ Merging all the data------------------------------
@@ -140,7 +144,7 @@ do
        
     python ../code_test/plot_lwp_Nd_reff.py --path-in $path_data_out/data_rttov_T${hr}_dropupbottom_Reff.nc --path-out $HOME/output/output_ICON # first create the folders output/output_ICON
 #COMMENT1
-
+#COMMENT2
 
 done
 exit 0

@@ -90,8 +90,9 @@ def get_training_inputs(path_output, path_ICON):
         
         
         n_pca = n_pca_variables_3D[key] #150
-        name_plot= "{}_PCA_variance_{}_variable".format(n_pca, key)
-        
+        name_plot= "{}_Explained_variance_{}_variable".format(n_pca, key)
+        print("============== Variable: {}  ========================================".format(key))
+
         X_pca, pca = PCA_calculation(var_scaled, name_plot,n_pca, path_output)
         pca_3D.append(pca)
         
@@ -116,9 +117,11 @@ def get_training_inputs(path_output, path_ICON):
 
 
     print("================ dataframe =============================")
-    training_input_variables_df.describe().to_csv(path_output + "/inputs_description.csv")    
+    training_input_variables_df.describe().to_csv(path_output + "/inputs_after_PCA_StandardScaler.csv")    
     # count_nan 
     count_nan_in_df = training_input_variables_df.isnull().sum()
+    print("================ values of Nan in training_input_variables_df =====================")
+
     print (count_nan_in_df)  #can i used 0 in the lwp and nd?
     
     #X_train_np = np.array([X_train_reshaped['pres'].data, X_train_reshaped['ta'].data, X_train_reshaped['hus'].data, X_train_reshaped['qnc'].data])
@@ -152,7 +155,8 @@ def test_random_forest(train_x, train_y, test_x, test_y):
     rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
                       max_depth=None, max_features='auto', max_leaf_nodes=None,
                       max_samples=None, min_impurity_decrease=0.0,
-                      min_impurity_split=None, min_samples_leaf=1,
+                      #min_impurity_split=None, min_samples_leaf=1,
+                      min_samples_leaf=1,
                       min_samples_split=2, min_weight_fraction_leaf=0.0,
                       n_estimators=100, n_jobs=None, oob_score=False,
                       random_state=None, verbose=0, warm_start=False)                              
@@ -176,15 +180,20 @@ def read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis):
     rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
     
     
-    print("****************variables shape ", np.shape(rttov_ds_refl_emmi['bt_refl_total'].values), np.shape(rttov_variable), np.shape(rttov_ds_rad['Y'].values))
+    # print("****************variables shape ", np.shape(rttov_ds_refl_emmi['bt_refl_total'].values), np.shape(rttov_variable), np.shape(rttov_ds_rad['Y'].values))
 
     rttov_variable[:19] = rttov_ds_refl_emmi['bt_refl_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
     rttov_variable[19:25] = rttov_ds_rad['Y'][19:25]
     rttov_variable[25] = rttov_ds_refl_emmi['bt_refl_total'][19] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
     rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
 
+    print("===================================== Training output ====================================== ")
+
+    print("****************variables shape training_output", np.shape(rttov_variable))
+
+        
     rttov_bands =rttov_ds_rad['chan'].values
-    print('rttov_variable',np.shape(rttov_variable))
+    # print('rttov_variable',np.shape(rttov_variable))
     refl_emmiss =  rttov_variable[:,9:,].transpose(1,2,0)
     
     rttov_ds_rad.close()
@@ -225,13 +234,13 @@ def read_input_target(rttov_path_rad, rttov_path_refl_emmis, path_output):
     refl_emmiss, rttov_bands = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
 
     ###### flat ###########################
-    name_file = 'refl_emiss'
+    name_file = 'refl_emiss_statistics'
     df = dataframe_csv(variable = refl_emmiss, colum = rttov_bands, path_output = path_output, name_file = name_file)
     ###### standard scaler ###########################\
     scaler = preprocessing.StandardScaler().fit(df)  #Standardize features by removing the mean and scaling to unit variance
     X_scaled = scaler.transform(df)
     ###### analysis  PCA###########################
-    name_plot= "PCA_variance_refl_emiss"
+    name_plot= "Explained_variance_refl_emiss"
     n_pca = 6 #2 #test JQ 
     n_bands = len(rttov_bands) #2 #test JQ     
     X_reduced_output, pca = PCA_calculation(X_scaled,name_plot,n_pca, path_output) #PC_output_all
@@ -362,8 +371,8 @@ def main():
     arg('--rttov-path-refl-emmis', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
     arg('--rttov-path-rad', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
     
-    arg('--path_rttov_test', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
-    arg('--path_ICON_test', type = str, default = '/home/jvillarreal/Documents/phd/dataset/data_rttov_T09.nc', help = 'Path of the test-dataset ')
+    # arg('--path_rttov_test', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
+    # arg('--path_ICON_test', type = str, default = '/home/jvillarreal/Documents/phd/dataset/data_rttov_T09.nc', help = 'Path of the test-dataset ')
 
     arg('--path-output', type=str, default='/home/jvillarreal/Documents/phd/output/ML_output', help='path of the output data is')
 
@@ -374,8 +383,8 @@ def main():
     # path_OUTPUT_RTTOV = args.path_OUTPUT_RTTOV 
     rttov_path_refl_emmis = args.rttov_path_refl_emmis
     rttov_path_rad = args.rttov_path_rad
-    path_rttov_test = args.path_rttov_test
-    path_ICON_test = args.path_ICON_test
+    # path_rttov_test = args.path_rttov_test
+    # path_ICON_test = args.path_ICON_test
     
     # ds=xr.open_dataset(path_ICON)
     # file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] 
@@ -388,8 +397,8 @@ def main():
     # test_x_df = get_test_input(path_output, path_ICON_test, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D)
     # test_y = get_test_output(path_rttov_test, path_output, scaler_Y, PCA_Y)
 
-    count_nan_in_df = train_x_df.isnull().sum()
-    print ("--------training_input_variables_df nan-------",count_nan_in_df)  
+    # count_nan_in_df = train_x_df.isnull().sum()
+    # print ("--------training_input_variables_df nan-------",count_nan_in_df)  
 
     x_train, x_test, y_train, y_test = train_test_split(train_x_df, train_y_df, test_size=0.33, random_state=42)
 
