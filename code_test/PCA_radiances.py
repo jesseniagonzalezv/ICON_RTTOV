@@ -6,7 +6,7 @@ import pprint
 import pandas as pd
 import argparse
 import sys
-from icecream import ic
+# from icecream import ic
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
@@ -46,7 +46,7 @@ def cov_eigval_numpy(X_scaled):
     tot = sum(EigVal)  #https://medium.com/luca-chuangs-bapm-notes/principal-component-analysis-pca-using-python-scikit-learn-48c4c13e49af
     var_exp = [(i / tot) for i in sorted(EigVal, reverse=True)]
     cum_var_exp = np.cumsum(var_exp)    
-    ic(cum_var_exp)
+    print("Cumulative explained variance \n",cum_var_exp)
         
     return PC,var_exp,cum_var_exp
 
@@ -145,14 +145,14 @@ def dataframe_csv(variable, colum, path_output, name_file):
     return df_after_drop                     
 
     
-def main():
-    parser = argparse.ArgumentParser()
-    arg = parser.add_argument
-    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/', help='path of the dataset is')
-    arg('--name-input', type=str, default='rttov-13-data-icon-1-to-36-not-flip.nc', help='name of the input file' )
-    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/output', help='path of the output data is' )
-    arg('--n-pca', type=int, default=36, help='number of pca to be used' ) #why 28
+# def main():
+#     parser = argparse.ArgumentParser()
+#     arg = parser.add_argument
+#     arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/', help='path of the dataset is')
+#     arg('--name-input', type=str, default='rttov-13-data-icon-1-to-36-not-flip.nc', help='name of the input file' )
+#     arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/output', help='path of the output data is' )
+#     arg('--n-pca', type=int, default=36, help='number of pca to be used' ) #why 28
 
  
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
