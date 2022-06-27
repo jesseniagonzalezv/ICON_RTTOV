@@ -11,7 +11,7 @@ path_data_in=/work/bb1036/b381362/dataset_icon #/home/jvillarreal
 path_data_out=/work/bb1036/b381362/dataset #/poorgafile1/climate/hdcp2/2013 
 
 
-for hr in 12 #09 10 15  #12
+for hr in 13 #09 10 15  #12
 
 do
 
@@ -45,12 +45,17 @@ do
 
 #for the other cases I use the first timestep , in some cases it is not the same chech it
     #T12
-	seltimestep_3D=7 #20130502.5208333=12:30pm T12 
-	seltimestep_2D=31 #20130502.5208333=12:30pm T12
+#	seltimestep_3D=7 #20130502.5208333=12:30pm T12 
+#	seltimestep_2D=31 #20130502.5208333=12:30pm T12
     
     # other time
 #	seltimestep_3D=1
 #	seltimestep_2D=1
+
+    # T = 13:40
+	seltimestep_3D=9
+	seltimestep_2D=41
+
     
 	#-------------------------------------------------------------------------------
 #<<COMMENT1
@@ -100,7 +105,7 @@ do
 #COMMENT1
 
 	echo ---------------- topography_c generating---------------------
-	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,topography_c,z_ifc,z_mc $fname_surface $fout_surface #z_ifc,z_mc=create_nc_surface
+	cdo -P 8 remapnn,myGridDef -setgrid,$gridfile -selname,topography_c $fname_surface $fout_surface #z_ifc,z_mc=create_nc_surface ,z_ifc,z_mc
 	echo ------------------ $fout_surface generated ------------
 
 #<<COMMENT2
@@ -122,7 +127,7 @@ do
     rm $path_data_out/$fout3d_rttov 
     rm $path_data_out/$fout2d_lwp $path_data_out/$fout2d_1 $path_data_out/$fout2d_rttov 
     rm $fout_landmask_rttov
-    rm $fout_surface
+    #rm $fout_surface
 
 
 #	ncks -d lon,8.,9. -d lat,48.,50.  $path_data_out/data_rttov_T${hr}.nc $path_data_out/subset_rttov_T${hr}.nc #Npoint=182*59=10738
