@@ -18,6 +18,10 @@ from sklearn import metrics
 from sklearn.model_selection import train_test_split
 import os
 
+import joblib
+import pickle
+
+
 
 def get_rmse_array(truth, pred):
     print(truth.shape, pred.shape)
@@ -72,13 +76,13 @@ def get_training_inputs(path_ICON):
  
 
 
-def from2to3d(x):
-    x_3d = np.zeros((6, 628,589)) 
+def from2to3d(x, lat_ds, lon_ds):
+    x_3d = np.zeros((6, len(lat_test_ds) , len(lon_ds))) # 628,589)) 
 
     for i in range(6):
-        x_3d[i,:,:] = x[:,i].reshape(-1,589)
+        x_3d[i,:,:] = x[:,i].reshape(-1, len(lon_ds))
         
-    return x_3d
+    return x_3d  
   
 
 def test_random_forest(train_x, train_y, test_x, test_y):
@@ -176,36 +180,45 @@ def read_data_refl_emiss_rttov(path_rttov_test):
     #return  refl_emmiss, rttov_bands
 
     
-def plot_target_prediction(target, prediction, path_output, name_plot):
+def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_plot):
     n_img = len(target)
-    fig = plt.figure(figsize=(5 * n_img, 5 * 2 ))  #WxH
+    fig = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
     
-    fig.suptitle("Comparation between target and prediction")
+    fig.suptitle("Comparation between target and prediction", fontsize = 24)
 
+    # x, y = np.meshgrid(lat_ds.values.ravel(), lon_ds.values.ravel())
+    x = lon_ds.values  
+    y = lat_ds.values
+
+    # x, y = np.meshgrid(x, y)
+    
     for i in range(n_img):
 
         # Emulator
         axes = plt.subplot(2,n_img, i + 1)
-        ctr = axes.pcolormesh(prediction[i])
+        ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
         # ctr = axes.pcolormesh(predicted_input)
-        axes.set_title(f"Prediction PC_{i}")
+        axes.set_title(f"Prediction PC_{i}",fontsize=14)
+        # axes.axis('off')
+
         plt.colorbar(ctr)
         
         # Target
         axes0 = plt.subplot(2,n_img, i + 1 + n_img)
-        ctr = axes0.pcolormesh(target[i])
+        ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
         # ctr = axes0.pcolormesh(target)
-        axes0.set_title(f"Target PC_{i}")
+        axes0.set_title(f"Target PC_{i}",fontsize=14)
+        # axes0.axis('off')
+
         plt.colorbar(ctr)
-    plt.tight_layout()
-        
-        
+    plt.tight_layout() #para q no queden muchos borde blanco
+    
     figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
                    
     fig.savefig(figure_name) 
-    plt.close()   
+    plt.close() 
     
-
+    
 def permutation_test(X_test, pr_truth, rf_pr):
     #%%time
     pr_result = permutation_importance(
@@ -366,8 +379,8 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     y_train = rttov_variable_ds.sel(lat=slice(0,53))
     y_test = rttov_variable_ds.sel(lat=slice(53.01, 60))  
     
-    lat_len = len(rttov_variable_ds.lat.values)
-    lon_len = len(rttov_variable_ds.lon.values)
+    lat_test_ds = y_test.lat
+    lon_test_ds = y_test.lon
     
     ###############################Dataframe Y_data##################################
     name_file = 'refl_emiss_statistics'
@@ -390,7 +403,7 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
                   name_file = name_file)
     ###################################################################################
         
-    return x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test
+    return x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds
 
   
 def scaler_PCA_input(df_x_train, path_output):
@@ -532,7 +545,7 @@ def main():
     # x_test = train_x_df[:,:,400:]
 
 
-    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
     
     ### PCA of the input and scaler
@@ -549,16 +562,20 @@ def main():
     ### scale and PCA Test output
 
     testing_df_y_test = get_test_output(df_y_test, path_output, scaler_y, pca_y)
+    
+    
+    x_train = training_df_x_train
+    x_test = testing_df_x_test
+    y_train = training_df_y_train
+    y_test = testing_df_y_test
+    
 
     rf_pcs = test_random_forest(train_x = training_df_x_train,
                                           train_y = training_df_y_train, 
                                           test_x = testing_df_x_test, 
                                           test_y = testing_df_y_test)
         
-    x_train = training_df_x_train
-    x_test = testing_df_x_test
-    y_train = training_df_y_train
-    y_test = testing_df_y_test
+
 ###################################################################################################
 
     # rf_pcs = test_random_forest(train_x = train_x_df,
@@ -596,6 +613,28 @@ def main():
     print('score in training:', score)  
     score = rf_pcs.score(x_test, y_test)
     print('score in testing:', score)
+    
+#     print("#############pickle #########################")
+#     # save the model to disk
+#     filename = 'finalized_model.sav'
+#     pickle.dump(rf_pcs, open(filename, 'wb'))
+#     # some time later...
+#     # load the model from disk
+#     loaded_model = pickle.load(open(filename, 'rb'))
+#     #############pickle #########################
+#     score = loaded_model.score(x_train, y_train)
+#     print('score in training:', score)  
+#     score = loaded_model.score(x_test, y_test)
+#     print('score in testing:', score)
+
+    
+#     print("#############joblib #########################")
+#     joblib.dump(rf_pcs, "./random_forest.joblib")
+#     loaded_rf = joblib.load("./random_forest.joblib")
+#     score = loaded_rf.score(x_train, y_train)
+#     print('score in training:', score)  
+#     score = loaded_rf.score(x_test, y_test)
+#     print('score in testing:', score)
 
     #####
     # score = rf_pcs.score(train_x_df, train_y_df)
@@ -605,8 +644,7 @@ def main():
     
     # pred_pcs_train = rf_pcs.predict(train_x_df)
     # predicted_3D_train = from2to3d(pred_pcs_train)
-    # test_pred_pcs = rf_pcs.predict(test_x_df)
-    # predicted_3D = from2to3d(test_pred_pcs)
+
     
     
     # xr_output = xr.Dataset(dict(refl_emis = m_out_pc1))
@@ -616,10 +654,12 @@ def main():
     
     # train_y_3D = from2to3d(train_y_df.to_numpy())
     # plot_target_prediction(target = train_y_3D, prediction = predicted_3D_train, path_output = path_output, name_plot = 'target_pred_training')
+    
 
-
-    # target_3D = from2to3d(test_y)
-    # plot_target_prediction(target_3D, predicted_3D, path_output, name_plot = 'target_pred_testing')
+    test_pred_pcs = rf_pcs.predict(testing_df_x_test)
+    test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
+    test_target_3D = from2to3d(testing_df_y_test,lat_test_ds, lon_test_ds)
+    plot_target_prediction(test_target_3D, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
 
 
     # permutation_test(x = train_x_df, y = train_y_df, model = rf_pcs)
