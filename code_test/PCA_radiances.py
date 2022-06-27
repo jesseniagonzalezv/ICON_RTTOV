@@ -118,31 +118,35 @@ def plot_PC(PC_2d_Norm, n_bands, path_output):
     plt.close() 
                      
 
-def dataframe_csv(variable, colum, path_output, name_file):
-  ### input (a,b,c) a will be the columns of the dataframe
-  # datafram  row = b*c, colum = a  
-    print('dataframe', np.shape(colum), np.shape(variable))
+def dataframe_csv(variable, column, path_output, name_file):
+    '''
+    input: 
+        variable (H,W,CH):  CH will be the columns of the dataframe
+        column: values of channels
+    output:  dataframe  row = H*W, colum = CH 
+    '''
+    print('dataframe', np.shape(column), np.shape(variable))
     X_flated = variable.reshape(-1,variable.shape[2]) # #np.stack(X_list, axis=-1)
     
     print(np.shape(X_flated))
     df=pd.DataFrame(X_flated) 
     
     
-    for i in range(len(colum)):
+    for i in range(len(column)):
         count_nan = df[i].isnull().sum()
-        print ('In band {} values NaN: {}'.format(colum[i], count_nan))  
+        print ('In band {} values NaN: {}'.format(column[i], count_nan))  
 
     
-    df_after_drop=df.dropna( how = 'any' ) # subset = [1],‘any’ : If any NA values are present, drop that row or column.  NOSE COMO RECONSTRUIR revisar si esto es los ultimos de la parte baja puedo poner simplemente 0 valor REVISAR
+    #df_after_drop=df.dropna( how = 'any' ) # it should not be neede because i cut the buttompart # subset = [1],‘any’ : If any NA values are present, drop that row or column.  NOSE COMO RECONSTRUIR revisar si esto es los ultimos de la parte baja puedo poner simplemente 0 valor REVISAR
     
     
     pd.set_option('display.float_format', lambda x: '%.1f' % x)
-    df.columns= colum
+    df.columns= column
     
     df.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
     print("ok dataframe")
     
-    return df_after_drop                     
+    return df                    
 
     
 # def main():
