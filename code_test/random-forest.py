@@ -21,8 +21,7 @@ import os
 import joblib
 import pickle
 
-
-
+'''
 def get_rmse_array(truth, pred):
     print(truth.shape, pred.shape)
     weights = np.cos(np.deg2rad(truth.lat))
@@ -72,85 +71,34 @@ def get_training_inputs(path_ICON):
 
     return df_train_inputs_variables_2D, train_inputs_variables_2D, train_inputs_variables_3D 
 
-
- 
-
-
-def from2to3d(x, lat_ds, lon_ds):
-    x_3d = np.zeros((6, len(lat_test_ds) , len(lon_ds))) # 628,589)) 
-
-    for i in range(6):
-        x_3d[i,:,:] = x[:,i].reshape(-1, len(lon_ds))
-        
-    return x_3d  
-  
-
-def test_random_forest(train_x, train_y, test_x, test_y):
-    # rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
-    #                   max_depth=None, max_features='auto', max_leaf_nodes=None,
-    #                   max_samples=None, min_impurity_decrease=0.0,
-    #                   min_impurity_split=None, min_samples_leaf=1,
-    #                   min_samples_split=2, min_weight_fraction_leaf=0.0,
-    #                   n_estimators=100, n_jobs=None, oob_score=False,
-    #                   random_state=None, verbose=0, warm_start=False)
-    # rf_model = RandomForestRegressor(bootstrap=False, random_state = 0, max_features='auto', n_estimators=200, min_samples_split= 100, min_samples_leaf=4,max_depth=1,  criterion='mse')
-                                     
-    rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
-                      max_depth=None, max_features='auto', max_leaf_nodes=None,
-                      max_samples=None, min_impurity_decrease=0.0,
-                      #min_impurity_split=None, min_samples_leaf=1,
-                      min_samples_leaf=1,
-                      min_samples_split=2, min_weight_fraction_leaf=0.0,
-                      n_estimators=100, n_jobs=None, oob_score=False,
-                      random_state=None, verbose=0, warm_start=False)                              
-        
-# rf_model = RandomForestRegressor( random_state=0, bootstrap=False, max_features='auto', **{'n_estimators': 200, 'min_samples_split': 100, 'min_samples_leaf': 4,  'max_depth': 1})
     
-    rf_pcs = rf_model.fit(train_x, train_y)
+def permutation_test(X_test, pr_truth, rf_pr):
+    #%%time
+    pr_result = permutation_importance(
+        # rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1, scoring=make_scorer(get_rmse_array))
+        rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1)
+
+    importances = rf_pr.model.model.feature_importances_
+    feature_names = list(X_test.columns)
     
-
-        
-    return rf_pcs
-
-def read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis):
-    '''
-    input: path of the radiances and reflectances
-    output: refl_emmiss CHxHxW  
-    '''
-    rttov_ds_rad = xr.open_dataset(rttov_path_rad).compute()  # write read rttov in a function
-    rttov_ds_refl_emmi = xr.open_dataset(rttov_path_refl_emmis).compute()    
-    
-    
-    rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
-    # print("****************variables shape ", np.shape(rttov_ds_refl_emmi['bt_refl_total'].values), np.shape(rttov_variable), np.shape(rttov_ds_rad['Y'].values))
-
-    rttov_variable[:19] = rttov_ds_refl_emmi['bt_refl_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
-    rttov_variable[19:25] = rttov_ds_rad['Y'][19:25]
-    rttov_variable[25] = rttov_ds_refl_emmi['bt_refl_total'][19] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
-    rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
-
-    print("===================================== Training output ====================================== ")
-
-    print("****************variables shape training_output", np.shape(rttov_variable))
-    
-    rttov_ds_rad.close()
-    rttov_ds_refl_emmi.close()
-        
-    #rttov_bands =rttov_ds_rad['chan'].values
-    # print('rttov_variable',np.shape(rttov_variable))
-    
-    #output then I dont neet to cut   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    rttov_variable_ds = xr.DataArray( rttov_variable[:,9:,], dims=['chan','lat','lon'], coords= [rttov_ds_rad.chan.data, rttov_ds_refl_emmi.lat.data[9:], rttov_ds_refl_emmi.lon.data ])
-        
-
-    return  rttov_variable_ds
+    std = np.std([tree.feature_importances_ for tree in rf_pr.model.model.estimators_], axis=0)
+    forest_importances = pd.Series(importances, index=feature_names)
+    fig, ax = plt.subplots()
+    forest_importances.plot.bar(yerr=std, ax=ax)
+    ax.set_title("PC0")
+    ax.set_ylabel("Feature importances")
+    fig.tight_layout()
+            
+    figure_name = '{}/Feature importances.png'.format(path_output) #aca pasarr con todo path
+                   
+    fig.savefig(figure_name) 
+    plt.close()  
 
 ### the next should be the last version 
 def read_data_refl_emiss_rttov(path_rttov_test):
-    '''
     
-    output: refl_emmiss #(HxWxCH)
-    '''
+    #output: refl_emmiss #(HxWxCH)
+    
     rttov_ds_refl_emmi = xr.open_dataset(path_rttov_test).compute()
     rttov_variable = np.zeros((np.shape(rttov_ds_refl_emmi['radiances_total'].values)))
     
@@ -180,74 +128,11 @@ def read_data_refl_emiss_rttov(path_rttov_test):
     #return  refl_emmiss, rttov_bands
 
     
-def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_plot):
-    n_img = len(target)
-    fig = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
-    
-    fig.suptitle("Comparation between target and prediction", fontsize = 24)
-
-    # x, y = np.meshgrid(lat_ds.values.ravel(), lon_ds.values.ravel())
-    x = lon_ds.values  
-    y = lat_ds.values
-
-    # x, y = np.meshgrid(x, y)
-    
-    for i in range(n_img):
-
-        # Emulator
-        axes = plt.subplot(2,n_img, i + 1)
-        ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
-        # ctr = axes.pcolormesh(predicted_input)
-        axes.set_title(f"Prediction PC_{i}",fontsize=14)
-        # axes.axis('off')
-
-        plt.colorbar(ctr)
-        
-        # Target
-        axes0 = plt.subplot(2,n_img, i + 1 + n_img)
-        ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
-        # ctr = axes0.pcolormesh(target)
-        axes0.set_title(f"Target PC_{i}",fontsize=14)
-        # axes0.axis('off')
-
-        plt.colorbar(ctr)
-    plt.tight_layout() #para q no queden muchos borde blanco
-    
-    figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
-                   
-    fig.savefig(figure_name) 
-    plt.close() 
-    
-    
-def permutation_test(X_test, pr_truth, rf_pr):
-    #%%time
-    pr_result = permutation_importance(
-        # rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1, scoring=make_scorer(get_rmse_array))
-        rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1)
-
-    importances = rf_pr.model.model.feature_importances_
-    feature_names = list(X_test.columns)
-    
-    std = np.std([tree.feature_importances_ for tree in rf_pr.model.model.estimators_], axis=0)
-    forest_importances = pd.Series(importances, index=feature_names)
-    fig, ax = plt.subplots()
-    forest_importances.plot.bar(yerr=std, ax=ax)
-    ax.set_title("PC0")
-    ax.set_ylabel("Feature importances")
-    fig.tight_layout()
-            
-    figure_name = '{}/Feature importances.png'.format(path_output) #aca pasarr con todo path
-                   
-    fig.savefig(figure_name) 
-    plt.close()   
-  
-   
-    
 def old_scaler_PCA_input(train_inputs_2D, train_inputs_3D, path_output):
-    '''
-    input: dataframe input with 2D and 3D
-    output: x_train_df dataframe with the variable 2D and 3D PCAs
-    '''
+    
+    #input: dataframe input with 2D and 3D
+    #output: x_train_df dataframe with the variable 2D and 3D PCAs
+    
     
     n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
         
@@ -318,7 +203,44 @@ def old_scaler_PCA_input(train_inputs_2D, train_inputs_3D, path_output):
 
     return training_input_variables_df, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D
 
+ 
+  
+'''
 
+def read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis):
+  
+    #input: path of the radiances and reflectances
+    #output: refl_emmiss CHxHxW  
+    
+    rttov_ds_rad = xr.open_dataset(rttov_path_rad).compute()  # write read rttov in a function
+    rttov_ds_refl_emmi = xr.open_dataset(rttov_path_refl_emmis).compute()    
+    
+    
+    rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
+    # print("****************variables shape ", np.shape(rttov_ds_refl_emmi['bt_refl_total'].values), np.shape(rttov_variable), np.shape(rttov_ds_rad['Y'].values))
+
+    rttov_variable[:19] = rttov_ds_refl_emmi['bt_refl_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
+    rttov_variable[19:25] = rttov_ds_rad['Y'][19:25]
+    rttov_variable[25] = rttov_ds_refl_emmi['bt_refl_total'][19] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
+    rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
+
+    print("===================================== Training output ====================================== ")
+
+    print("****************variables shape training_output", np.shape(rttov_variable))
+    
+    rttov_ds_rad.close()
+    rttov_ds_refl_emmi.close()
+        
+    #rttov_bands =rttov_ds_rad['chan'].values
+    # print('rttov_variable',np.shape(rttov_variable))
+    
+    #output then I dont neet to cut   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    rttov_variable_ds = xr.DataArray( rttov_variable[:,9:,], dims=['chan','lat','lon'], coords= [rttov_ds_rad.chan.data, rttov_ds_refl_emmi.lat.data[9:], rttov_ds_refl_emmi.lon.data ])
+        
+
+    return  rttov_variable_ds  
+   
+ 
 def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output):
     '''
     Input: path of the X and Y. X = ICON-LES, Y = RTTOV-radiances/reflectances
@@ -338,6 +260,19 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     ds_x_train = ds.sel(lat=slice(0,53))  # I am keeping the higher area
     ds_x_test = ds.sel(lat=slice(53.01,60))
     
+    #================================= X ========================================
+
+
+    rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
+    y_train = rttov_variable_ds.sel(lat=slice(0,53))
+    y_test = rttov_variable_ds.sel(lat=slice(53.01, 60))  
+    
+    lat_test_ds = y_test.lat
+    lon_test_ds = y_test.lon
+    
+        
+    #=============================Dataframe X  ====================================    
+
     ds.close()
     
     x_train_2D = { "Nd_max": ds_x_train.Nd_max.values, "lwp": ds_x_train.lwp.values}  
@@ -375,17 +310,11 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
         df_x_test=pd.concat([df_x_test, var_df], axis=1)
         
     #================================= Y ========================================
-    rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
-    y_train = rttov_variable_ds.sel(lat=slice(0,53))
-    y_test = rttov_variable_ds.sel(lat=slice(53.01, 60))  
-    
-    lat_test_ds = y_test.lat
-    lon_test_ds = y_test.lon
     
     ###############################Dataframe Y_data##################################
     name_file = 'refl_emiss_statistics'
     df_y = dataframe_csv(variable = rttov_variable_ds.transpose('lat', 'lon', 'chan').values, 
-                  column = y_train.chan.values,  
+                  column = rttov_variable_ds.chan.values,  
                   path_output = path_output, 
                   name_file = name_file)
            
@@ -398,12 +327,79 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     
     name_file = 'refl_emiss_statistics_test'
     df_y_test = dataframe_csv(variable = y_test.transpose('lat', 'lon', 'chan').values, 
-                  column = y_train.chan.values, 
+                  column = y_test.chan.values, 
                   path_output = path_output, 
                   name_file = name_file)
     ###################################################################################
         
     return x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds
+
+def get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output):
+    '''
+    Input: path of the X and Y. X = ICON-LES, Y = RTTOV-radiances/reflectances
+    Output: xarray.DataArray  chan: 36, lat: 637, lon: 589
+    
+    dataframes 
+    x_train_2D, x_train_3D (height, lat, lon) = ICON-LES lat < 53.01
+    x_test_2D, x_test_3D (height, lat, lon) =  ICON-LES lat > 53.01
+    y_train, y_test (chan: 36, lat, lon)  = radiances/reflectances 
+    
+    df_y_train: dataframe  row = H*W, colum = CH  
+    '''
+    #================================= x ========================================
+    ds = xr.open_dataset(path_ICON).compute()
+    #================================= y ========================================
+    rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)  
+    #=============================Dataframe X  ====================================    
+    x_train_2D_all = { "Nd_max": ds.Nd_max.values, "lwp": ds.lwp.values}          
+    x_train_3D_all = { "pres": ds.pres.values, "ta": ds.ta.values, "hus": ds.hus.values}
+    ds.close()    
+    #=============================Dataframe X  ====================================    
+    df_x_all = pd.DataFrame()
+    
+    for key, var in x_train_2D_all.items():  
+        df = pd.DataFrame(data = var.flatten()
+             , columns =  [key])
+        df_x_all = pd.concat([df_x_all, df], axis=1)   
+        
+    for key, var in x_train_3D_all.items():  
+        var = var.transpose(1,2,0) #lat,lot,heigh
+        var_df = pd.DataFrame(var.reshape(-1, var.shape[2]))
+        var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
+        df_x_all=pd.concat([df_x_all, var_df], axis=1)
+    
+    ###############################Dataframe Y_data##################################
+    name_file = 'refl_emiss_statistics'
+    df_y_all = dataframe_csv(variable = rttov_variable_ds.transpose('lat', 'lon', 'chan').values, 
+                  column = rttov_variable_ds.chan.values,  
+                  path_output = path_output, 
+                  name_file = name_file)
+    
+#     df_permutated = df.sample(frac=1)
+
+#     train_size = 0.8
+#     train_end = int(len(df_permutated)*train_size)
+
+#     df_train = df_permutated[:train_end]
+#     df_test = df_permutated[train_end:]
+
+     
+    x_train, x_test, y_train, y_test = train_test_split(df_x_all, df_y_all, test_size=0.33, random_state=42)
+
+    print("==========================convert dataframe ======================")
+
+    print(x_train)
+    
+
+    df_x_train = x_train
+    df_x_test = x_test
+    df_y_train = y_train
+    df_y_test = y_test
+
+
+    return x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test
+
+
 
   
 def scaler_PCA_input(df_x_train, path_output):
@@ -505,6 +501,80 @@ def get_test_output(df, path_output, scaler, pca):
     
     return test_df
 
+def test_random_forest(train_x, train_y, test_x, test_y):
+    # rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
+    #                   max_depth=None, max_features='auto', max_leaf_nodes=None,
+    #                   max_samples=None, min_impurity_decrease=0.0,
+    #                   min_impurity_split=None, min_samples_leaf=1,
+    #                   min_samples_split=2, min_weight_fraction_leaf=0.0,
+    #                   n_estimators=100, n_jobs=None, oob_score=False,
+    #                   random_state=None, verbose=0, warm_start=False)
+    # rf_model = RandomForestRegressor(bootstrap=False, random_state = 0, max_features='auto', n_estimators=200, min_samples_split= 100, min_samples_leaf=4,max_depth=1,  criterion='mse')
+                                     
+    rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
+                      max_depth=None, max_features='auto', max_leaf_nodes=None,
+                      max_samples=None, min_impurity_decrease=0.0,
+                      #min_impurity_split=None, min_samples_leaf=1,
+                      min_samples_leaf=1,
+                      min_samples_split=2, min_weight_fraction_leaf=0.0,
+                      n_estimators=100, n_jobs=None, oob_score=False,
+                      random_state=None, verbose=0, warm_start=False)                              
+        
+# rf_model = RandomForestRegressor( random_state=0, bootstrap=False, max_features='auto', **{'n_estimators': 200, 'min_samples_split': 100, 'min_samples_leaf': 4,  'max_depth': 1})
+    
+    rf_pcs = rf_model.fit(train_x, train_y)
+    
+
+        
+    return rf_pcs
+
+def from2to3d(x, lat_ds, lon_ds):
+    x_3d = np.zeros((6, len(lat_ds) , len(lon_ds))) # 628,589)) 
+
+    for i in range(6):
+        x_3d[i,:,:] = x[:,i].reshape(-1, len(lon_ds))
+        
+    return x_3d  
+  
+def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_plot):
+    n_img = len(target)
+    fig = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
+    
+    fig.suptitle("Comparation between target and prediction", fontsize = 24)
+
+    # x, y = np.meshgrid(lat_ds.values.ravel(), lon_ds.values.ravel())
+    x = lon_ds #.values  
+    y = lat_ds #.values
+
+    # x, y = np.meshgrid(x, y)
+    
+    for i in range(n_img):
+
+        # Emulator
+        axes = plt.subplot(2,n_img, i + 1)
+        ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
+        # ctr = axes.pcolormesh(predicted_input)
+        axes.set_title(f"Prediction PC_{i}",fontsize=14)
+        # axes.axis('off')
+
+        plt.colorbar(ctr)
+        
+        # Target
+        axes0 = plt.subplot(2,n_img, i + 1 + n_img)
+        ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
+        # ctr = axes0.pcolormesh(target)
+        axes0.set_title(f"Target PC_{i}",fontsize=14)
+        # axes0.axis('off')
+
+        plt.colorbar(ctr)
+    plt.tight_layout() #para q no queden muchos borde blanco
+    
+    figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
+                   
+    fig.savefig(figure_name) 
+    plt.close() 
+    
+    
     
 def main():
     parser = argparse.ArgumentParser()
@@ -533,21 +603,13 @@ def main():
     
     # ds=xr.open_dataset(path_ICON)
     # file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] 
-########### Reading the input and output for the training #############
-    # df_train_inputs_variables_2D, train_inputs_variables_3D = get_training_inputs(path_ICON)
-        # train_x_df, scaler_2D, scaler_3D, pca_3D, n_pca_variables_3D = scaler_PCA(df_train_inputs_variables_2D, train_inputs_variables_3D, path_output)
-    # scaler_Y, train_y_df, PCA_Y = read_input_target(rttov_path_rad, rttov_path_refl_emmis, path_output)
-    # count_nan_in_df = train_x_df.isnull().sum()
-    # print ("--------training_input_variables_df nan-------",count_nan_in_df)  
-    # x_train, x_test, y_train, y_test = train_test_split(train_x_df, train_y_df, test_size=0.33, random_state=42)
 
-    # x_train = train_x_df[:,:,:400]
-    # x_test = train_x_df[:,:,400:]
+#######################  3D #############33
+    # x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+
+    x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
 
-    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
-
-    
     ### PCA of the input and scaler
     training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input(df_x_train, path_output)
 
@@ -575,21 +637,6 @@ def main():
                                           test_x = testing_df_x_test, 
                                           test_y = testing_df_y_test)
         
-
-###################################################################################################
-
-    # rf_pcs = test_random_forest(train_x = train_x_df,
-    #                                           train_y = train_y_df, 
-    #                                           test_x = test_x_df, 
-    #                                           test_y = test_y)
-
-
-    # rf_pcs = test_random_forest(train_x = x_train,
-    #                                       train_y = y_train, 
-    #                                       test_x = x_test, 
-    #                                       test_y = y_test)
-
-    
     
     gt =  y_train 
     pred = rf_pcs.predict(x_train)
@@ -656,11 +703,14 @@ def main():
     # plot_target_prediction(target = train_y_3D, prediction = predicted_3D_train, path_output = path_output, name_plot = 'target_pred_training')
     
 
-    test_pred_pcs = rf_pcs.predict(testing_df_x_test)
-    test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
-    test_target_3D = from2to3d(testing_df_y_test,lat_test_ds, lon_test_ds)
-    plot_target_prediction(test_target_3D, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
+    #######################  3D #############33
 
+    # test_pred_pcs = rf_pcs.predict(testing_df_x_test)
+    # test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
+    # test_target_3D = from2to3d(testing_df_y_test, lat_test_ds, lon_test_ds)
+    # plot_target_prediction(test_target_3D, lat_test_ds, lon_test_ds, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
+
+#######################  3D #############33
 
     # permutation_test(x = train_x_df, y = train_y_df, model = rf_pcs)
 
