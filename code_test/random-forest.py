@@ -257,15 +257,15 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     
     #================================= X ========================================
 
-    ds_x_train = ds.sel(lat=slice(0,53))  # I am keeping the higher area
-    ds_x_test = ds.sel(lat=slice(53.01,60))
+    ds_x_train = ds.sel(lat=slice(0,51.5))  #(0,53))  #  # I am keeping the higher area
+    ds_x_test = ds.sel(lat=slice(51.5,53)) #(53.01,60)) 
     
     #================================= X ========================================
 
 
     rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
-    y_train = rttov_variable_ds.sel(lat=slice(0,53))
-    y_test = rttov_variable_ds.sel(lat=slice(53.01, 60))  
+    y_train = rttov_variable_ds.sel(lat=slice(0,51.5)) #(0,53)) 
+    y_test = rttov_variable_ds.sel(lat=slice(51.5,53)) #(53.01, 60))  
     
     lat_test_ds = y_test.lat
     lon_test_ds = y_test.lon
@@ -297,7 +297,10 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
         var_df = pd.DataFrame(var.reshape(-1, var.shape[2]))
         var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
         df_x_train=pd.concat([df_x_train, var_df], axis=1)
-
+    
+    print("=================== Dataframe training =======================================")    
+    name_file = 'inputs_statistics_training'  
+    df_x_train.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
     
     for key, var in x_test_2D.items():  
         df = pd.DataFrame(data = var.flatten()
@@ -309,6 +312,9 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
         var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
         df_x_test=pd.concat([df_x_test, var_df], axis=1)
         
+    print("=================== Dataframe testing =======================================")    
+    name_file = 'inputs_statistics_testing'  
+    df_x_test.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
     #================================= Y ========================================
     
     ###############################Dataframe Y_data##################################
@@ -368,6 +374,10 @@ def get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emm
         var_df.columns = [f"{key}_{i}" for i in range(var.shape[2])]
         df_x_all=pd.concat([df_x_all, var_df], axis=1)
     
+    print("=================== Dataframe all =======================================")    
+    name_file = 'inputs_statistics_all_data'  
+    df_x_all.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    
     ###############################Dataframe Y_data##################################
     name_file = 'refl_emiss_statistics'
     df_y_all = dataframe_csv(variable = rttov_variable_ds.transpose('lat', 'lon', 'chan').values, 
@@ -383,19 +393,26 @@ def get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emm
 #     df_train = df_permutated[:train_end]
 #     df_test = df_permutated[train_end:]
 
-     
-    x_train, x_test, y_train, y_test = train_test_split(df_x_all, df_y_all, test_size=0.33, random_state=42)
+    df_x_train, df_x_test, df_y_train, df_y_test = train_test_split(df_x_all, df_y_all, test_size=0.33, random_state=42)
+    # print("==========================convert dataframe ======================")
+    # print(x_train)
+    df_x_train.columns = df_x_all.columns
+    df_x_test.columns = df_x_all.columns
+    df_y_train.columns = df_y_all.columns
+    df_y_test.columns = df_y_all.columns
 
-    print("==========================convert dataframe ======================")
-
-    print(x_train)
+    # df_x_train = x_train
+    # df_x_test = x_test
+    # df_y_train = y_train
+    # df_y_test = y_test
+    print("=================== Dataframe training saved =======================================")    
+    name_file = 'inputs_statistics_training'  
+    df_x_train.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
     
-
-    df_x_train = x_train
-    df_x_test = x_test
-    df_y_train = y_train
-    df_y_test = y_test
-
+    print("=================== Dataframe testing  saved=======================================")    
+    name_file = 'inputs_statistics_testing'  
+    df_x_test.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    
 
     return x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test
 
@@ -415,6 +432,12 @@ def scaler_PCA_input(df_x_train, path_output):
     scaler = preprocessing.StandardScaler().fit(df_x_train)   
     df = pd.DataFrame(scaler.transform(df_x_train), columns = df_x_train.columns) 
 
+    print("=================== After scaler dataframe training saved=======================================")    
+    name_file = 'after_scaler_inputs_statistics_training'  
+    df.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    
+  
+    
     pca_3D = {}
     
     for key in variables_2D: 
@@ -436,7 +459,7 @@ def scaler_PCA_input(df_x_train, path_output):
              , columns = [f"{key}_PCA_{i}" for i in range(n_pca)])
         training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
 
-    print("================ dataframe all after PCA=============================")
+    print("================ dataframe all after PCA saved=============================")
     training_df_x_train.describe().to_csv(path_output + "/inputs_after_PCA_StandardScaler.csv")    
     # count_nan 
     count_nan_in_df = training_df_x_train.isnull().sum()
@@ -460,7 +483,7 @@ def PCA_read_input_target(df_y_train, path_output):
     X_reduced_output, pca_y = PCA_calculation(X_scaled, name_plot, n_pca, path_output) #PC_output_all
 
     principalDf = pd.DataFrame(data = X_reduced_output
-             , columns = [f"PCA_{i}" for i in range(np.shape(X_reduced_output)[1])])
+             , columns = [f"PCA_{i}" for i in range(np.shape(X_reduced_output)[1])], index = df_y_train.index)
         
         
     return scaler_y, principalDf, pca_y
@@ -477,6 +500,11 @@ def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
 
         
     df = pd.DataFrame(scaler.transform(df_x_test), columns = df_x_test.columns) 
+    
+    print("=================== After scaler Dataframe testing =======================================")    
+    name_file = 'after_scaler_inputs_statistics_testing'  
+    df.describe().to_csv("{}/{}.csv".format(path_output, name_file))  
+    
     
     for key in variables_2D: 
         testing_df_x_test=pd.concat([testing_df_x_test, df[key]], axis=1)
@@ -605,9 +633,10 @@ def main():
     # file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] 
 
 #######################  3D #############33
-    # x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+#######################  end 3D #############33
 
-    x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+    # x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
 
     ### PCA of the input and scaler
@@ -703,14 +732,14 @@ def main():
     # plot_target_prediction(target = train_y_3D, prediction = predicted_3D_train, path_output = path_output, name_plot = 'target_pred_training')
     
 
-    #######################  3D #############33
+    ######################  3D #############33
 
-    # test_pred_pcs = rf_pcs.predict(testing_df_x_test)
-    # test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
-    # test_target_3D = from2to3d(testing_df_y_test, lat_test_ds, lon_test_ds)
-    # plot_target_prediction(test_target_3D, lat_test_ds, lon_test_ds, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
+    test_pred_pcs = rf_pcs.predict(testing_df_x_test)
+    test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
+    test_target_3D = from2to3d(testing_df_y_test, lat_test_ds, lon_test_ds)
+    plot_target_prediction(test_target_3D, lat_test_ds, lon_test_ds, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
 
-#######################  3D #############33
+######################  end 3D #############33
 
     # permutation_test(x = train_x_df, y = train_y_df, model = rf_pcs)
 
