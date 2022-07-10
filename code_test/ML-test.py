@@ -419,7 +419,7 @@ def main():
 
     x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
-
+######################################## PCA #########################################
     ### PCA of the input and scaler
     training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input(df_x_train, path_output)
 
@@ -436,17 +436,21 @@ def main():
     testing_df_y_test = get_test_output(df_y_test, path_output, scaler_y, pca_y)
     
     
+######################################## LDS #########################################
+
+
     x_train = training_df_x_train
     x_test = testing_df_x_test
     y_train = training_df_y_train
     y_test = testing_df_y_test
     
 
+
     rf_pcs = test_random_forest(train_x = training_df_x_train,
                                           train_y = training_df_y_train, 
                                           test_x = testing_df_x_test, 
                                           test_y = testing_df_y_test)
-        
+    # rf_pcs = model    
     
     gt =  y_train 
     pred = rf_pcs.predict(x_train)
