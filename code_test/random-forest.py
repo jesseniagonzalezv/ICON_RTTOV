@@ -21,6 +21,11 @@ import os
 import joblib
 import pickle
 
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.neural_network import MLPRegressor
+
+
 '''
 def get_rmse_array(truth, pred):
     print(truth.shape, pred.shape)
@@ -257,15 +262,15 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     
     #================================= X ========================================
 
-    ds_x_train = ds.sel(lat=slice(0,51.5))  #(0,53))  #  # I am keeping the higher area
-    ds_x_test = ds.sel(lat=slice(51.5,53)) #(53.01,60)) 
+    ds_x_train = ds.sel(lat=slice(0,52))  #(0,53))  #  # I am keeping the higher area
+    ds_x_test = ds.sel(lat=slice(52,53)) #(53.01,60)) 
     
     #================================= X ========================================
 
 
     rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
-    y_train = rttov_variable_ds.sel(lat=slice(0,51.5)) #(0,53)) 
-    y_test = rttov_variable_ds.sel(lat=slice(51.5,53)) #(53.01, 60))  
+    y_train = rttov_variable_ds.sel(lat=slice(0,52)) #(0,53)) 
+    y_test = rttov_variable_ds.sel(lat=slice(52,53)) #(53.01, 60))  
     
     lat_test_ds = y_test.lat
     lon_test_ds = y_test.lon
@@ -469,6 +474,71 @@ def scaler_PCA_input(df_x_train, path_output):
 
     return training_df_x_train, scaler, pca_3D, n_pca_variables_3D
 
+def scaler_PCA_input_all_3D(df_x_train, path_output):
+    '''
+    input: dataframe input with 2D and 3D
+    output: x_train_df dataframe with the variable 2D and 3D PCAs
+    '''
+    variables_2D = { "Nd_max", "lwp"}  
+    # n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
+
+    # scaler_variables = { "Nd_max", "lwp", "pres", "ta", "hus"}
+    training_df_x_train = pd.DataFrame()
+
+    scaler = preprocessing.StandardScaler().fit(df_x_train)   
+    df = pd.DataFrame(scaler.transform(df_x_train), columns = df_x_train.columns) 
+
+    print("=================== After scaler dataframe training saved=======================================")    
+    name_file = 'after_scaler_inputs_statistics_training'  
+    df.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    
+  
+
+    # pca_3D = {}
+    
+    for key in variables_2D: 
+        training_df_x_train=pd.concat([training_df_x_train, df[key]], axis=1)
+
+        
+    X = df.drop(columns =["lwp","Nd_max"])
+    name_plot= "Explained_variance__variable_all"
+    n_pca = 26 
+    n_pca_variables_3D = n_pca
+    X_pca, pca = PCA_calculation(X.to_numpy(), name_plot,n_pca, path_output)
+    pca_3D = pca
+
+    principalDf = pd.DataFrame(data = X_pca
+         , columns = [f"3D_PCA_{i}" for i in range(n_pca)])
+    training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
+
+        
+#     for key, var in n_pca_variables_3D.items():  
+#         var_scaled = df.filter(like=key)                 
+#         n_pca = var 
+#         name_plot= "{}_Explained_variance_{}_variable".format(n_pca, key)
+#         print("============== Variable: {}  ========================================".format(key))
+#         X_pca, pca = PCA_calculation(var_scaled.to_numpy(), name_plot,n_pca, path_output)
+#         #pca_3D.append(pca)
+#         pca_3D[key] = pca
+
+#         # print( 'Original shape: {}'.format(str(PC.shape)))
+#         print( 'Original shape: {}'.format(str(var_scaled.shape)))
+#         print( 'Reduced shape: {}'.format(str(X_pca.shape)))
+#         principalDf = pd.DataFrame(data = X_pca
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca)])
+#         training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
+
+    print("================ dataframe all after PCA saved=============================")
+    training_df_x_train.describe().to_csv(path_output + "/inputs_after_PCA_StandardScaler.csv")    
+    # count_nan 
+    count_nan_in_df = training_df_x_train.isnull().sum()
+    print("================ values of Nan in training_input_variables_df =====================")
+    print (count_nan_in_df)  #can i used 0 in the lwp and nd?
+
+
+    return training_df_x_train, scaler, pca_3D, n_pca_variables_3D
+
+
 
 def PCA_read_input_target(df_y_train, path_output):
     '''
@@ -488,6 +558,9 @@ def PCA_read_input_target(df_y_train, path_output):
         
     return scaler_y, principalDf, pca_y
 
+
+
+    
 ##################### 
 def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
     '''
@@ -515,6 +588,43 @@ def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
         principalDf = pd.DataFrame(data = pca_3D[key] .transform(var_scaled.to_numpy()) #pca_3D [i] i de 1 
              , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
         testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
+        
+    return testing_df_x_test
+
+
+
+def get_test_input_PCA_all_3D(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
+    '''
+    PC_output (latxlon, number_pcs)
+    '''
+    testing_df_x_test = pd.DataFrame()
+    
+    variables_2D = { "Nd_max", "lwp"}  
+    # variables_3D = { "pres", "ta", "hus"} 
+
+        
+    df = pd.DataFrame(scaler.transform(df_x_test), columns = df_x_test.columns) 
+    
+    print("=================== After scaler Dataframe testing =======================================")    
+    name_file = 'after_scaler_inputs_statistics_testing'  
+    df.describe().to_csv("{}/{}.csv".format(path_output, name_file))  
+    
+    
+    for key in variables_2D: 
+        testing_df_x_test=pd.concat([testing_df_x_test, df[key]], axis=1)
+
+        
+    X = df.drop(columns =["lwp","Nd_max"])
+    principalDf = pd.DataFrame(data = pca_3D.transform(X.to_numpy()) #pca_3D [i] i de 1 
+                               
+         , columns = [f"3D_PCA_{i}" for i in range(n_pca_variables_3D)])
+    testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
+
+#     for key in n_pca_variables_3D:  
+#         var_scaled = df.filter(like=key)   
+#         principalDf = pd.DataFrame(data = pca_3D[key] .transform(var_scaled.to_numpy()) #pca_3D [i] i de 1 
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
+#         testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
         
     return testing_df_x_test
 
@@ -603,6 +713,36 @@ def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_
     plt.close() 
     
     
+def metric_calculation(x_train, y_train, x_test, y_test, model, name_model):
+    gt =  y_train 
+    pred = model.predict(x_train)
+    print("*************************** Results of the model {} *********************************".format(name_model))
+
+    print("========================= Training metrics ==========================") 
+    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
+    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
+    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
+    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
+    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
+    print('Accuracy: \n', round(100*(1 - mape), 2))
+
+    
+    print("========================= Testing metrics ==========================") 
+    gt =  y_test 
+    pred = model.predict(x_test)
+ 
+    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
+    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
+    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
+    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
+    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
+    print('Accuracy: \n', round(100*(1 - mape), 2))
+
+
+    score = model.score(x_train, y_train)
+    print('score in training:', score)  
+    score = model.score(x_test, y_test)
+    print('score in testing:', score)    
     
 def main():
     parser = argparse.ArgumentParser()
@@ -638,17 +778,24 @@ def main():
 
     # x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
+    #######################  scaler all 3D variables #############
+    training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input_all_3D(df_x_train, path_output)
+    ####################### end scaler all #############
 
-    ### PCA of the input and scaler
-    training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input(df_x_train, path_output)
+    ### PCA of each input and scaler
+    # training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input(df_x_train, path_output)
 
+     #######################  scaler all 3D variables in test #############
+    testing_df_x_test = get_test_input_PCA_all_3D(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
+     ####################### end scaler all 3D variables in test #############
+
+    
+#     ##### scale and PCA each input Test 
+#     testing_df_x_test = get_test_input(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
     
     ### PCA of the output and scaler
     scaler_y, training_df_y_train, pca_y = PCA_read_input_target(df_y_train, path_output)
-
     
-    ##### scale and PCA Test input
-    testing_df_x_test = get_test_input(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
     
     ### scale and PCA Test output
 
@@ -656,40 +803,39 @@ def main():
     
     
     x_train = training_df_x_train
-    x_test = testing_df_x_test
     y_train = training_df_y_train
+
+    x_test = testing_df_x_test
     y_test = testing_df_y_test
     
-
+#===================================random forest ===================================
     rf_pcs = test_random_forest(train_x = training_df_x_train,
                                           train_y = training_df_y_train, 
                                           test_x = testing_df_x_test, 
                                           test_y = testing_df_y_test)
-        
     
-    gt =  y_train 
-    pred = rf_pcs.predict(x_train)
-    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
-    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
-    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
-    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
-    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
-    print('Accuracy: \n', round(100*(1 - mape), 2))
+    metric_calculation(x_train, y_train, x_test, y_test, model = rf_pcs, name_model = "Random_forest")
+  
+# #=================================== MLPRegressor ===================================
 
-    gt =  y_test 
-    pred = rf_pcs.predict(x_test)
-    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
-    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
-    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
-    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
-    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
-    print('Accuracy: \n', round(100*(1 - mape), 2))
+#     clf = MLPRegressor(solver='lbfgs', 
+#                    alpha=1e-5,     # used for regularization, ovoiding overfitting by penalizing large magnitudes
+#                    hidden_layer_sizes=(5, 2), random_state=24)
+#     clf.fit(x_train, y_train)
+#     # res = clf.predict(train_data)
+#     metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "MLRegressor")
+#     model = clf
 
-    score = rf_pcs.score(x_train, y_train)
-    print('score in training:', score)  
-    score = rf_pcs.score(x_test, y_test)
-    print('score in testing:', score)
-    
+# #=================================== Gaussian Process ===================================
+
+#     kernel = 1 * RBF(length_scale=1.0, length_scale_bounds=(1e-2, 1e2))
+#     gaussian_process = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+#     gaussian_process.fit(x_train, y_train)
+#     metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "GP")
+
+# #===================================  ===================================
+
+
 #     print("#############pickle #########################")
 #     # save the model to disk
 #     filename = 'finalized_model.sav'
@@ -732,14 +878,14 @@ def main():
     # plot_target_prediction(target = train_y_3D, prediction = predicted_3D_train, path_output = path_output, name_plot = 'target_pred_training')
     
 
-    ######################  3D #############33
-
-    test_pred_pcs = rf_pcs.predict(testing_df_x_test)
+#     ######################  3D #############33
+     
+    test_pred_pcs = model.predict(testing_df_x_test)
     test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
     test_target_3D = from2to3d(testing_df_y_test, lat_test_ds, lon_test_ds)
     plot_target_prediction(test_target_3D, lat_test_ds, lon_test_ds, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
 
-######################  end 3D #############33
+# ######################  end 3D #############33
 
     # permutation_test(x = train_x_df, y = train_y_df, model = rf_pcs)
 
