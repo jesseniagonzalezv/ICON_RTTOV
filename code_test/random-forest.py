@@ -262,32 +262,54 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     
     #================================= X ========================================
 
-    ds_x_train = ds.sel(lat=slice(0,52))  #(0,53))  #  # I am keeping the higher area
-    ds_x_test = ds.sel(lat=slice(52,53)) #(53.01,60)) 
+    # ds_x_train = ds.sel(lat=slice(50,55))  #(0,53))  #  # I am keeping the higher area
+    # ds_x_test = ds.sel(lat=slice(48,50)) #(53.01,60)) 
+
+    # ds_x_train = ds.sel(lon=slice(0,11))  #(0,53))  #  # I am keeping the higher area
+    # ds_x_test = ds.sel(lon=slice(11,16)) #(53.01,60)) 
+    ds_x_train = ds.sel(lat=slice(0,49))  #(0,53))  #  # I am keeping the higher area
+    ds_x_test = ds.sel(lat=slice(49,55)) #(53.01,60)) 
     
-    #================================= X ========================================
-
-
+    ds.close()
+    #================================= X ========================================    
     rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
-    y_train = rttov_variable_ds.sel(lat=slice(0,52)) #(0,53)) 
-    y_test = rttov_variable_ds.sel(lat=slice(52,53)) #(53.01, 60))  
+    # y_train = rttov_variable_ds.sel(lat=slice(50,55)) #(0,53)) 
+    # y_test = rttov_variable_ds.sel(lat=slice(48,50)) #(53.01, 60))  
+    
+    # y_train = rttov_variable_ds.sel(lon=slice(0,11)) #(0,53)) 
+    # y_test = rttov_variable_ds.sel(lon=slice(11,16)) #(53.01, 60)) 
+    y_train = rttov_variable_ds.sel(lat=slice(0,49)) #(0,53)) 
+    y_test = rttov_variable_ds.sel(lat=slice(49,55)) #(53.01, 60))  
     
     lat_test_ds = y_test.lat
     lon_test_ds = y_test.lon
+
     
         
+    # df_x_train.drop(df_x_train[(df_x_train['Nd_max'] <400) & (df_x_train['lwp'] < 600)].index, inplace=True)
+   
     #=============================Dataframe X  ====================================    
 
-    ds.close()
     
-    x_train_2D = { "Nd_max": ds_x_train.Nd_max.values, "lwp": ds_x_train.lwp.values}  
+#     x_train_2D = { "Nd_max": np.log((ds_x_train.Nd_max.values/np.max(ds_x_train.Nd_max.values)) + 1.0e-16), "lwp": np.log(ds_x_train.lwp.values/np.max(ds_x_train.lwp.values) + 1.0e-16)}  #, "clc": ds_x_train.clc.values*100
     
         
-    x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
+#     x_train_3D = { "pres": np.log(ds_x_train.pres.values/np.max(ds_x_train.pres.values)), "ta": np.log(ds_x_train.ta.values / np.max(ds_x_train.ta.values)), "hus": np.log(ds_x_train.hus.values/np.max(ds_x_train.hus.values))}
     
  
+     # x_test_2D = { "Nd_max": np.log((ds_x_test.Nd_max.values / np.max(ds_x_test.Nd_max.values)) + 1.0e-16) , "lwp": np.log((ds_x_test.lwp.values/np.max(ds_x_test.lwp.values)) + 1.0e-16)}  #, "clc": ds_x_test.clc.values*100
+#     x_test_3D = { "pres": np.log(ds_x_test.pres.values/ np.max(ds_x_test.pres.values)), "ta": np.log(ds_x_test.ta.values/np.max(ds_x_test.ta.values)), "hus": np.log(ds_x_test.hus.values/ np.max(ds_x_test.hus.values))}
+
+
+    x_train_2D = { "Nd_max": ds_x_train.Nd_max.values, "lwp": ds_x_train.lwp.values}  
+    x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
+    
     x_test_2D = { "Nd_max": ds_x_test.Nd_max.values, "lwp": ds_x_test.lwp.values}  
     x_test_3D = { "pres": ds_x_test.pres.values, "ta": ds_x_test.ta.values, "hus": ds_x_test.hus.values}
+    
+    
+    ds_x_train.close()
+    ds_x_test.close()
     
     #=============================Dataframe X  ====================================    
     df_x_train = pd.DataFrame()
@@ -319,8 +341,10 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
         
     print("=================== Dataframe testing =======================================")    
     name_file = 'inputs_statistics_testing'  
-    df_x_test.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    df_x_test.describe().to_csv("{}/{}.csv".format(path_output, name_file))    
+    
     #================================= Y ========================================
+
     
     ###############################Dataframe Y_data##################################
     name_file = 'refl_emiss_statistics'
@@ -328,6 +352,7 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
                   column = rttov_variable_ds.chan.values,  
                   path_output = path_output, 
                   name_file = name_file)
+    rttov_variable_ds.close()
            
     ############## convert img_rttov: because the input for the dataframe_csv need to be HxWxCH I use transpose ##########################
     name_file = 'refl_emiss_statistics_train'
@@ -335,7 +360,7 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
                   column = y_train.chan.values,  
                   path_output = path_output, 
                   name_file = name_file)
-    
+     
     name_file = 'refl_emiss_statistics_test'
     df_y_test = dataframe_csv(variable = y_test.transpose('lat', 'lon', 'chan').values, 
                   column = y_test.chan.values, 
@@ -343,6 +368,10 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
                   name_file = name_file)
     ###################################################################################
         
+
+    y_train.close()
+    y_test.close()
+    
     return x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds
 
 def get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output):
@@ -880,10 +909,10 @@ def main():
 
 #     ######################  3D #############33
      
-    test_pred_pcs = model.predict(testing_df_x_test)
-    test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
-    test_target_3D = from2to3d(testing_df_y_test, lat_test_ds, lon_test_ds)
-    plot_target_prediction(test_target_3D, lat_test_ds, lon_test_ds, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
+    # test_pred_pcs = model.predict(testing_df_x_test)
+    # test_predicted_3D = from2to3d(test_pred_pcs,lat_test_ds, lon_test_ds)
+    # test_target_3D = from2to3d(testing_df_y_test, lat_test_ds, lon_test_ds)
+    # plot_target_prediction(test_target_3D, lat_test_ds, lon_test_ds, test_predicted_3D, path_output, name_plot = 'target_pred_testing')
 
 # ######################  end 3D #############33
 
