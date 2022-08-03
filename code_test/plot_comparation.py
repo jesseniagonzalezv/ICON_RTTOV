@@ -70,9 +70,9 @@ def plot_MODIS_simulation(variable, band, lat, lon, title_subplot, map_limit, fi
 
 
        # visulize_sat(grid_valid_variable, bands_variable, gr_lat, gr_lon, cbar_label, titel, map_boundaries )
-'''
-RGB MODIS lo hago en modis funtions y modis_l1b_rgb
-''''
+# '''
+# RGB MODIS lo hago en modis funtions y modis_l1b_rgb
+# ''''
 
 def main():
     parser = argparse.ArgumentParser()
