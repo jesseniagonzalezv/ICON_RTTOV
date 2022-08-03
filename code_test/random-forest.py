@@ -212,54 +212,83 @@ def old_scaler_PCA_input(train_inputs_2D, train_inputs_3D, path_output):
   
 '''
 
-def read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis):
+
+def read_data_refl_emiss_rttov( rttov_path_rad, rttov_path_refl_emmis): #rttov_path
   
     #input: path of the radiances and reflectances
     #output: refl_emmiss CHxHxW  
     
     rttov_ds_rad = xr.open_dataset(rttov_path_rad).compute()  # write read rttov in a function
     rttov_ds_refl_emmi = xr.open_dataset(rttov_path_refl_emmis).compute()    
+    # rttov_ds = xr.open_dataset(rttov_path).compute()    
     
     
     rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
+    # rttov_variable = np.zeros((np.shape(rttov_ds['Radiance_total'].values)))
+
     # print("****************variables shape ", np.shape(rttov_ds_refl_emmi['bt_refl_total'].values), np.shape(rttov_variable), np.shape(rttov_ds_rad['Y'].values))
+
 
     rttov_variable[:19] = rttov_ds_refl_emmi['bt_refl_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
     rttov_variable[19:25] = rttov_ds_rad['Y'][19:25]
     rttov_variable[25] = rttov_ds_refl_emmi['bt_refl_total'][19] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
     rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
+    
+    # rttov_variable[:19] = rttov_ds['BRF_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
+    # rttov_variable[19:25] = rttov_ds['Radiance_total'][19:25]
+    # rttov_variable[25] = rttov_ds['BRF_total'][25] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
+    # rttov_variable[26:36] = rttov_ds['Radiance_total'][26:36]
+    
 
+    
     print("===================================== Training output ====================================== ")
 
     print("****************variables shape training_output", np.shape(rttov_variable))
     
     rttov_ds_rad.close()
     rttov_ds_refl_emmi.close()
-        
+    # rttov_ds.close()
+     
     #rttov_bands =rttov_ds_rad['chan'].values
     # print('rttov_variable',np.shape(rttov_variable))
     
     #output then I dont neet to cut   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    rttov_variable_ds = xr.DataArray( rttov_variable[:,9:,], dims=['chan','lat','lon'], coords= [rttov_ds_rad.chan.data, rttov_ds_refl_emmi.lat.data[9:], rttov_ds_refl_emmi.lon.data ])
-        
+    rttov_variable_ds = xr.DataArray( rttov_variable[:,9:,], dims=['channel','lat','lon'], coords= [rttov_ds_rad.chan.data, rttov_ds_refl_emmi.lat.data[9:], rttov_ds_refl_emmi.lon.data ])
+    # rttov_variable_ds = xr.DataArray( rttov_variable, dims=['channel','lat','lon'], coords= [rttov_ds.Channel.data, rttov_ds.Latitude.data, rttov_ds.Longitude.data])      
 
     return  rttov_variable_ds  
    
  
-def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output):
+def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_path_refl_emmis): #rttov_path
     '''
-    Input: path of the X and Y. X = ICON-LES, Y = RTTOV-radiances/reflectances
-    Output: xarray.DataArray  chan: 36, lat: 637, lon: 589
+    Input: path of the x  and y  (x = ICON-LES, y = RTTOV-radiances/reflectances)
+           path_ICON:
+                   x: 3D variables height: 150, lat: 628, lon: 589
+                      2D variables lat: 628, lon: 589
+           rttov_path_rad, rttov_path_refl_emmis:
+                   y: 3D variables Channel: 36, Latitude: 628, Longitude: 589
+                      reflectances: 1-19,26  Channel  
+                      radiances: 20-25,27-36 Channel 
+           path_output: path in which the output will be saved
+
+    Output:
     
     dataframes 
-    x_train_2D, x_train_3D (height, lat, lon) = ICON-LES lat < 53.01
-    x_test_2D, x_test_3D (height, lat, lon) =  ICON-LES lat > 53.01
-    y_train, y_test (chan: 36, lat, lon)  = radiances/reflectances 
-    
-    df_y_train: dataframe  row = H*W, colum = CH  
+    x_train_2D, x_train_3D (height, lat, lon) = ICON-LES lat < threshold
+    x_test_2D, x_test_3D (height, lat, lon) =  ICON-LES lat > threshold
+    y_train, y_test (Channel: 36, Latitude, Longitude)  = radiances/reflectances 
+    df_x_train, df_x_test: dataframes of the ICON-LES inputs
+                           dataframe 2D variables (row: lat x lon(H*W))
+                           dataframe 3D variables (row: lat x lon(H*W), columns(height))
+    df_y_train, df_y_test: dataframes of the reflectances/radiances
+                           dataframe variables (row: Latitude x Longitude(H*W), columns(Channel))
+
     '''
     ds = xr.open_dataset(path_ICON).compute()
-    
+    # rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path)
+    rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path_rad, rttov_path_refl_emmis)
+
+
     #================================= X ========================================
 
     # ds_x_train = ds.sel(lat=slice(50,55))  #(0,53))  #  # I am keeping the higher area
@@ -267,19 +296,58 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
 
     # ds_x_train = ds.sel(lon=slice(0,11))  #(0,53))  #  # I am keeping the higher area
     # ds_x_test = ds.sel(lon=slice(11,16)) #(53.01,60)) 
-    ds_x_train = ds.sel(lat=slice(0,49))  #(0,53))  #  # I am keeping the higher area
-    ds_x_test = ds.sel(lat=slice(49,55)) #(53.01,60)) 
+    # ds_x_train = ds.sel(lat=slice(0,49))  #(0,53))  #  # I am keeping the higher area
+    # ds_x_test = ds.sel(lat=slice(49,55)) #(53.01,60)) 
+    
+    # ################### K folds ###############################
+    if (k_fold == 5):
+        ds_x_train = ds.sel(lat=slice(48.97, 54.47))
+        ds_x_test = ds.sel(lat=slice(47.5, 48.97) )
+        
+        y_train = rttov_variable_ds.sel(lat=slice(48.97, 54.47) ) #(0,53)) 
+        y_test = rttov_variable_ds.sel(lat=slice(47.5, 48.97)) #(53.01, 60)) 
+    
+    elif (k_fold == 4):
+        ds_x_train = xr.concat([ds.sel(lat=slice(47.5, 48.97)), ds.sel(lat=slice(50.34, 54.47))], dim="lat")
+        ds_x_test = ds.sel(lat=slice(48.97, 50.34))
+
+        y_train = xr.concat([rttov_variable_ds.sel(lat=slice(47.5, 48.97)), rttov_variable_ds.sel(lat=slice(50.34, 54.47))], dim="lat")  
+        y_test = rttov_variable_ds.sel(lat=slice(48.97, 50.34)) #(53.01, 60))  
+   
+    elif (k_fold == 3):      
+        ds_x_train = xr.concat([ds.sel(lat=slice(47.5, 50.34)), ds.sel(lat=slice(51.72, 54.47))], dim="lat")
+        ds_x_test = ds.sel(lat=slice(50.34, 51.72))
+         
+        y_train = xr.concat([rttov_variable_ds.sel(lat=slice(47.5, 50.34)), rttov_variable_ds.sel(lat=slice(51.72, 54.47))], dim="lat") 
+        y_test = rttov_variable_ds.sel(lat=slice(50.34, 51.72)) #(53.01, 60))  
+    
+    elif (k_fold == 2):
+        ds_x_train = xr.concat([ds.sel(lat=slice(47.5, 51.72)), ds.sel(lat=slice(53.09, 54.47))], dim="lat")
+        ds_x_test = ds.sel(lat=slice(51.72, 53.09))
+        
+        y_train = xr.concat([rttov_variable_ds.sel(lat=slice(47.5, 51.72)), rttov_variable_ds.sel(lat=slice(53.09, 54.47))], dim="lat") 
+        y_test = rttov_variable_ds.sel(lat=slice(51.72, 53.09)) #(53.01, 60))  
+    
+    elif (k_fold == 1):
+        ds_x_train = ds.sel(lat=slice(47.5, 53.09))
+        ds_x_test = ds.sel(lat=slice(53.09, 54.47) )
+    
+        y_train = rttov_variable_ds.sel(lat=slice(47.5, 53.09) ) #(0,53)) 
+        y_test = rttov_variable_ds.sel(lat=slice(53.09, 54.47)) #(53.01, 60)) 
+    
     
     ds.close()
     #================================= X ========================================    
-    rttov_variable_ds = read_data_refl_emiss_rttov_old(rttov_path_rad, rttov_path_refl_emmis)
     # y_train = rttov_variable_ds.sel(lat=slice(50,55)) #(0,53)) 
     # y_test = rttov_variable_ds.sel(lat=slice(48,50)) #(53.01, 60))  
     
     # y_train = rttov_variable_ds.sel(lon=slice(0,11)) #(0,53)) 
     # y_test = rttov_variable_ds.sel(lon=slice(11,16)) #(53.01, 60)) 
-    y_train = rttov_variable_ds.sel(lat=slice(0,49)) #(0,53)) 
-    y_test = rttov_variable_ds.sel(lat=slice(49,55)) #(53.01, 60))  
+#     y_train = rttov_variable_ds.sel(lat=slice(0,49)) #(0,53)) 
+#     y_test = rttov_variable_ds.sel(lat=slice(49,55)) #(53.01, 60))
+
+    # ################################################################################
+ 
     
     lat_test_ds = y_test.lat
     lon_test_ds = y_test.lon
@@ -301,10 +369,14 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
 #     x_test_3D = { "pres": np.log(ds_x_test.pres.values/ np.max(ds_x_test.pres.values)), "ta": np.log(ds_x_test.ta.values/np.max(ds_x_test.ta.values)), "hus": np.log(ds_x_test.hus.values/ np.max(ds_x_test.hus.values))}
 
 
-    x_train_2D = { "Nd_max": ds_x_train.Nd_max.values, "lwp": ds_x_train.lwp.values}  
+    x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16)}  
     x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
     
-    x_test_2D = { "Nd_max": ds_x_test.Nd_max.values, "lwp": ds_x_test.lwp.values}  
+    # print(x_train_2D.describe())
+
+
+    
+    x_test_2D = { "Nd_max": np.log(ds_x_test.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_test.lwp.values+ 1.0e-16)}  
     x_test_3D = { "pres": ds_x_test.pres.values, "ta": ds_x_test.ta.values, "hus": ds_x_test.hus.values}
     
     
@@ -348,24 +420,31 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     
     ###############################Dataframe Y_data##################################
     name_file = 'refl_emiss_statistics'
-    df_y = dataframe_csv(variable = rttov_variable_ds.transpose('lat', 'lon', 'chan').values, 
-                  column = rttov_variable_ds.chan.values,  
+    df_y = dataframe_csv(variable = rttov_variable_ds.transpose('lat', 'lon', 'channel').values, 
+                  column = rttov_variable_ds.channel.values,  
                   path_output = path_output, 
                   name_file = name_file)
     rttov_variable_ds.close()
            
     ############## convert img_rttov: because the input for the dataframe_csv need to be HxWxCH I use transpose ##########################
     name_file = 'refl_emiss_statistics_train'
-    df_y_train = dataframe_csv(variable = y_train.transpose('lat', 'lon', 'chan').values, 
-                  column = y_train.chan.values,  
+    df_y_train = dataframe_csv(variable = y_train.transpose('lat', 'lon', 'channel').values, 
+                  column = y_train.channel.values,  
                   path_output = path_output, 
                   name_file = name_file)
      
+    
+    # # df_y_train = preprocessing.normalize(df_y_train)
+
+        
     name_file = 'refl_emiss_statistics_test'
-    df_y_test = dataframe_csv(variable = y_test.transpose('lat', 'lon', 'chan').values, 
-                  column = y_test.chan.values, 
+    df_y_test = dataframe_csv(variable = y_test.transpose('lat', 'lon', 'channel').values, 
+                  column = y_test.channel.values, 
                   path_output = path_output, 
                   name_file = name_file)
+    
+    # df_y_test = preprocessing.normalize(df_y_test)
+
     ###################################################################################
         
 
@@ -373,6 +452,8 @@ def get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path
     y_test.close()
     
     return x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds
+
+
 
 def get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output):
     '''
@@ -573,8 +654,16 @@ def PCA_read_input_target(df_y_train, path_output):
     '''
     PC_output (latxlon, number_pcs)
     '''
-    scaler_y = preprocessing.StandardScaler().fit(df_y_train)  #Standardize features by removing the mean and scaling to unit variance
-    X_scaled = scaler_y.transform(df_y_train)
+###########################################
+    df_y_train_normalized = preprocessing.normalize(df_y_train)
+###########################################3
+    
+    # scaler_y = preprocessing.StandardScaler().fit(df_y_train)  #Standardize features by removing the mean and scaling to unit variance
+    # X_scaled = scaler_y.transform(df_y_train)
+
+    scaler_y = preprocessing.StandardScaler().fit(df_y_train_normalized)  #Standardize features by removing the mean and scaling to unit variance
+    X_scaled = scaler_y.transform(df_y_train_normalized)
+
     ###### analysis  PCA###########################
     name_plot= "Explained_variance_refl_emiss"
     n_pca = 6 
@@ -583,8 +672,13 @@ def PCA_read_input_target(df_y_train, path_output):
 
     principalDf = pd.DataFrame(data = X_reduced_output
              , columns = [f"PCA_{i}" for i in range(np.shape(X_reduced_output)[1])], index = df_y_train.index)
+    print("columns output", principalDf.columns)
         
-        
+    print("=================== After scaler and pca output training Dataframe =======================================")   
+    name_file = 'after_scaler_pca_output_statistics_training'  
+    principalDf.describe().to_csv("{}/{}.csv".format(path_output, name_file)) 
+    
+    
     return scaler_y, principalDf, pca_y
 
 
@@ -617,7 +711,9 @@ def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
         principalDf = pd.DataFrame(data = pca_3D[key] .transform(var_scaled.to_numpy()) #pca_3D [i] i de 1 
              , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
         testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
-        
+      
+    
+
     return testing_df_x_test
 
 
@@ -663,9 +759,23 @@ def get_test_output(df, path_output, scaler, pca):
     # ###### flat ###########################
     # name_file = 'refl_emiss_test'
     # df = dataframe_csv(variable = y_test, colum = rttov_bands, path_output = path_output, name_file = name_file)
-    test_df= scaler.transform(df)
-    test_df = pca.transform(test_df)
+############################################333    
+    df_normalized = preprocessing.normalize(df)
+###########################################3
+    # test_scaled= scaler.transform(df)
+    test_scaled= scaler.transform(df_normalized)
+
+    test_pca = pca.transform(test_scaled)
     
+    print(np.shape(test_pca))
+    test_df = pd.DataFrame(data = test_pca
+             , columns = [f"PCA_{i}" for i in range(np.shape(test_pca)[1])])
+    
+    print("=================== After scaler and pca output testing Dataframe =======================================")   
+    name_file = 'after_scaler_pca_output_statistics_testing'  
+    test_df.describe().to_csv("{}/{}.csv".format(path_output, name_file)) 
+    
+        
     return test_df
 
 def test_random_forest(train_x, train_y, test_x, test_y):
@@ -777,10 +887,16 @@ def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--path-ICON', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the dataset is the ICON simulations')
-#     arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/github/output-rttov/VF-output-test-modis-T12.nc', help='path of the dataset the output of RTTOV')
-    # arg('--path-OUTPUT-RTTOV', type=str, default='/home/jvillarreal/Documents/phd/output/output-rttov/output-test-2-modis.nc', help='path of the dataset the output of RTTOV')
+    arg('--k-fold', type=int, default=1, help='fold to be simulated: 1, 2, 3, 4, 5')
+    arg('--name-PCA', type=str, default='PCA_1', help='PCA_0, 1, 2, 3, 4, 5')
+
     arg('--rttov-path-refl-emmis', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
     arg('--rttov-path-rad', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
+    
+    arg('--rttov-path', type = str, default = "/work/bb1036/rttov_share/rttov-131-36-channels-05022013-07182022.nc", help = 'Path of the dataset with only reflectances 1-19 and 26')
+
+    
+    
     
     arg('--path-rttov-test', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
     arg('--path-ICON-test', type = str, default = '/home/jvillarreal/Documents/phd/dataset/data_rttov_T09.nc', help = 'Path of the test-dataset ')
@@ -791,10 +907,17 @@ def main():
 
     path_ICON = args.path_ICON
     path_output=args.path_output
-    # path_OUTPUT_RTTOV = args.path_OUTPUT_RTTOV 
+
     rttov_path_refl_emmis = args.rttov_path_refl_emmis
     rttov_path_rad = args.rttov_path_rad
     
+    k_fold = args.k_fold
+    name_PCA = args.name_PCA
+    
+    rttov_path = args.rttov_path
+    # rttov_path_refl_emmis = rttov_path
+    # rttov_path_rad = rttov_path
+
     path_rttov_test = args.path_rttov_test
     path_ICON_test = args.path_ICON_test
     
@@ -802,46 +925,50 @@ def main():
     # file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] 
 
 #######################  3D #############33
-    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
-#######################  end 3D #############33
+    # x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+    # x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path, path_output, k_fold)
+    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_path_refl_emmis)
+
+    #######################  end 3D #############33
 
     # x_train_2D_all, x_train_3D_all,  df_x_train, df_x_test, df_y_train, df_y_test = get_split_data_xarray_alldata(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
     #######################  scaler all 3D variables #############
-    training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input_all_3D(df_x_train, path_output)
+    # training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input_all_3D(df_x_train, path_output)
     ####################### end scaler all #############
 
     ### PCA of each input and scaler
-    # training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input(df_x_train, path_output)
+    training_df_x_train, scaler_x, pca_3D, n_pca_variables_3D = scaler_PCA_input(df_x_train, path_output)
 
      #######################  scaler all 3D variables in test #############
-    testing_df_x_test = get_test_input_PCA_all_3D(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
-     ####################### end scaler all 3D variables in test #############
+    # testing_df_x_test = get_test_input_PCA_all_3D(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
 
-    
+    ####################### end scaler all 3D variables in test #############    
 #     ##### scale and PCA each input Test 
-#     testing_df_x_test = get_test_input(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
+    testing_df_x_test = get_test_input(path_output, df_x_test, scaler_x, pca_3D, n_pca_variables_3D)
     
     ### PCA of the output and scaler
     scaler_y, training_df_y_train, pca_y = PCA_read_input_target(df_y_train, path_output)
-    
+
     
     ### scale and PCA Test output
 
     testing_df_y_test = get_test_output(df_y_test, path_output, scaler_y, pca_y)
     
-    
+    print("columns train", training_df_y_train.columns)
+    print("columns test", testing_df_y_test.columns)
+
     x_train = training_df_x_train
-    y_train = training_df_y_train
+    y_train = training_df_y_train[name_PCA] #['PCA_1']
 
     x_test = testing_df_x_test
-    y_test = testing_df_y_test
+    y_test = testing_df_y_test[name_PCA] #['PCA_1']
     
 #===================================random forest ===================================
-    rf_pcs = test_random_forest(train_x = training_df_x_train,
-                                          train_y = training_df_y_train, 
-                                          test_x = testing_df_x_test, 
-                                          test_y = testing_df_y_test)
+    rf_pcs = test_random_forest(train_x = x_train,
+                                          train_y = y_train, 
+                                          test_x = x_test, 
+                                          test_y = y_test)
     
     metric_calculation(x_train, y_train, x_test, y_test, model = rf_pcs, name_model = "Random_forest")
   
