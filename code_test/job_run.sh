@@ -4,10 +4,10 @@
 #SBATCH --partition=compute
 
 #SBATCH --account=bb1036                                                                                                                                                                      
-#SBATCH --nodes=20                                                                                                                                                                             
+#SBATCH --nodes=1                                                                                                                                                                            
 ##SBATCH --ntasks=30                                                                                                                                                                           
 ##SBATCH --cpus-per-task=6                                                                                                                                                                    
-#SBATCH --time=04:00:00                                                                                                                                                                       
+#SBATCH --time=04:30:00                                                                                                                                                                       
 #SBATCH --job-name=testing                                                                                                                                                              
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=jessenia.gv@gmail.com # Email address for notifications
@@ -55,11 +55,19 @@ date >> models-results.log
 # done
 
 
+# for i in 2 #1 2 3 4 5
+# do
+#     for n in 0 1 2 3 4 5 
+#     do
+#         python random-forest.py  --k-fold $i --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_output/output_RF --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> log_rf_fold_${i}_PCA_${n}.txt 
+#     done
+# done
+
 for i in 2 #1 2 3 4 5
 do
-    for n in 0 1 2 3 4 5 
+    for n in 0 #1 2 3 4 5 
     do
-        python random-forest.py --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_output/output_RF --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> log_rf_fold_${i}_PCA_${n}.txt 
+python ML_test.py --k-fold $i --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_output/ML_output --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> log_ML_fold_2_PCA_0_MLR2_old_output.txt 
     done
 done
 

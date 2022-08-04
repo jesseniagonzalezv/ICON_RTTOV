@@ -13,6 +13,10 @@ from PCA_radiances import PCA_calculation, variance_sklearn_plot, dataframe_csv 
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import make_scorer, check_scoring, mean_squared_error
 
+from sklearn import metrics
+
+from skimage.metrics import structural_similarity as ssim
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
@@ -26,26 +30,44 @@ from sklearn.gaussian_process.kernels import RBF
 from sklearn.neural_network import MLPRegressor
 
 
-def read_data_refl_emiss_rttov(rttov_path): #rttov_path_rad, rttov_path_refl_emmis):
- 
-    rttov_ds = xr.open_dataset(rttov_path).compute()        
-    rttov_variable = np.zeros((np.shape(rttov_ds['Radiance_total'].values)))
+def read_data_refl_emiss_rttov( rttov_path_rad, rttov_path_refl_emmis): #rttov_path
+  
+    #input: path of the radiances and reflectances
+    #output: refl_emmiss CHxHxW  
+    
+    rttov_ds_rad = xr.open_dataset(rttov_path_rad).compute()  # write read rttov in a function
+    rttov_ds_refl_emmi = xr.open_dataset(rttov_path_refl_emmis).compute()  
+    
+    
+    # rttov_ds = xr.open_dataset(rttov_path).compute()        
+    # rttov_variable = np.zeros((np.shape(rttov_ds['Radiance_total'].values)))
+    rttov_variable = np.zeros((np.shape(rttov_ds_rad['Y'].values)))
 
-    rttov_variable[:19] = rttov_ds['BRF_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
-    rttov_variable[19:25] = rttov_ds['Radiance_total'][19:25]
-    rttov_variable[25] = rttov_ds['BRF_total'][25] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
-    rttov_variable[26:36] = rttov_ds['Radiance_total'][26:36]
+    rttov_variable[:19] = rttov_ds_refl_emmi['bt_refl_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
+    rttov_variable[19:25] = rttov_ds_rad['Y'][19:25]
+    rttov_variable[25] = rttov_ds_refl_emmi['bt_refl_total'][19] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
+    rttov_variable[26:36] = rttov_ds_rad['Y'][26:36]
+
+#     rttov_variable[:19] = rttov_ds['BRF_total'][:19] #refl 1-19, 26 rad 20-25 and 27-36
+#     rttov_variable[19:25] = rttov_ds['Radiance_total'][19:25]
+#     rttov_variable[25] = rttov_ds['BRF_total'][25] #solo tengo en este archivo 1-19,26 luego tengo q hacer todo esto en un solo file
+#     rttov_variable[26:36] = rttov_ds['Radiance_total'][26:36]
     
     print("===================================== Training output ====================================== ")
     print("****************variables shape training_output", np.shape(rttov_variable))
     
-    rttov_ds.close()
-    rttov_variable_ds = xr.DataArray( rttov_variable, dims=['channel','lat','lon'], coords= [rttov_ds.Channel.data, rttov_ds.Latitude.data, rttov_ds.Longitude.data])      
+    # rttov_ds.close()
+    # rttov_variable_ds = xr.DataArray( rttov_variable, dims=['channel','lat','lon'], coords= [rttov_ds.Channel.data, rttov_ds.Latitude.data, rttov_ds.Longitude.data])      
 
+    rttov_ds_rad.close()
+    rttov_ds_refl_emmi.close()
+    rttov_variable_ds = xr.DataArray( rttov_variable[:,9:,], dims=['channel','lat','lon'], coords= [rttov_ds_rad.chan.data, rttov_ds_refl_emmi.lat.data[9:], rttov_ds_refl_emmi.lon.data ])
+
+    
     return  rttov_variable_ds  
    
  
-def get_split_data_xarray(path_ICON, rttov_path, path_output, k_fold): #rttov_path_rad, rttov_path_refl_emmis
+def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_path_refl_emmis): #rttov_path
     '''
     Input: path of the x  and y  (x = ICON-LES, y = RTTOV-radiances/reflectances)
            path_ICON:
@@ -71,7 +93,8 @@ def get_split_data_xarray(path_ICON, rttov_path, path_output, k_fold): #rttov_pa
 
     '''
     ds = xr.open_dataset(path_ICON).compute()
-    rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path)
+    # rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path)
+    rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path_rad, rttov_path_refl_emmis)
 
     #================================= X ========================================
     # ################### K folds ###############################
@@ -206,7 +229,7 @@ def get_split_data_xarray(path_ICON, rttov_path, path_output, k_fold): #rttov_pa
 
 
     
-def get_data_xarray(path_ICON, rttov_path, path_output): 
+def get_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output):  #rttov_path
     '''
     Input: path of the x  and y  (x = ICON-LES, y = RTTOV-radiances/reflectances)
            path_ICON:
@@ -229,7 +252,9 @@ def get_data_xarray(path_ICON, rttov_path, path_output):
 
     '''
     ds = xr.open_dataset(path_ICON).compute()
-    rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path)
+    # rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path)
+    rttov_variable_ds = read_data_refl_emiss_rttov(rttov_path_rad, rttov_path_refl_emmis)
+
      
     lat_ds = rttov_variable_ds.lat
     lon_ds = rttov_variable_ds.lon
@@ -422,41 +447,73 @@ def test_random_forest(train_x, train_y, test_x, test_y):
     return rf_pcs
 
 def from2to3d(x, lat_ds, lon_ds):
-    x_3d = np.zeros((6, len(lat_ds) , len(lon_ds))) # 628,589)) 
+    print(np.shape(x))
+    columns = np.shape(x)[1]
+    x_3d = np.zeros((columns, len(lat_ds) , len(lon_ds))) # 628,589)) 
 
-    for i in range(6):
+    for i in range(columns):
         x_3d[i,:,:] = x[:,i].reshape(-1, len(lon_ds))
         
     return x_3d  
-  
-def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_plot):
-    n_img = len(target)
-    fig = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
-    
-    fig.suptitle("Comparation between target and prediction", fontsize = 24)
+ 
+def from1to2d(x, lat_ds, lon_ds):
+    print(np.shape(x))
 
-    x = lon_ds #.values  
-    y = lat_ds #.values
-    
-    for i in range(n_img):
+    x_2d = np.zeros((len(lat_ds) , len(lon_ds))) # 628,589)) 
 
-        # Emulator
-        axes = plt.subplot(2,n_img, i + 1)
-        ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
-        axes.set_title(f"Prediction PC_{i}",fontsize=14)
-        plt.colorbar(ctr)
+    x_2d[:,:] = x.reshape(len(lat_ds) , len(lon_ds))
         
-        # Target
-        axes0 = plt.subplot(2,n_img, i + 1 + n_img)
-        ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
-        axes0.set_title(f"Target PC_{i}",fontsize=14)
+            
+    return x_2d 
 
-        plt.colorbar(ctr)
-    plt.tight_layout() #para q no queden muchos borde blanco
+# def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_plot):
+#     n_img = len(target)
+#     fig = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
     
+#     fig.suptitle("Comparation between target and prediction", fontsize = 24)
+
+#     x = lon_ds #.values  
+#     y = lat_ds #.values
+    
+#     for i in range(n_img):
+
+#         axes = plt.subplot(2,n_img, i + 1)
+#         # ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
+#         ctr = axes.pcolormesh(x, y,prediction,cmap = "cividis",shading='auto')
+
+#         axes.set_title(f"Prediction PC_{i}",fontsize=14)
+#         plt.colorbar(ctr)
+        
+#         # Target
+#         axes0 = plt.subplot(2,n_img, i + 1 + n_img)
+#         # ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
+#         ctr = axes0.pcolormesh(x, y,target,cm
+#         # Emulatorap = "cividis",shading='auto')
+#         axes0.set_title(f"Target PC_{i}",fontsize=14)
+
+#         plt.colorbar(ctr)
+#     plt.tight_layout() #para q no queden muchos borde blanco
+
+def plot_target_prediction(ds_out, path_output, name_plot):
+
+    # n_channels = len(output_ds)
+    # n_channels
+    f, axes = plt.subplots(1, 2, figsize=(4*2, 1*4*1.066)) #width of 15 inches and 7 inches in height.
+    f.subplots_adjust(wspace=0.4, hspace=0.4)
+
+    axli = axes.ravel()
+
+    # for i in n_channels:
+    ds_out['target'].plot(ax = axli[0] )#, vmin=0, vmax=0.12, cmap='jet')
+    ds_out['prediction'].plot(ax = axli[1])#, vmin=0, vmax=0.12, cmap='jet')# cmap='cividis', 
+
+    plt.suptitle("ssim: " + str(ssim(ds_out['target'], ds_out['prediction'])) + " rmse: " + str(mean_squared_error(ds_out['target'], ds_out['prediction'])))
+
     figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
-                   
-    fig.savefig(figure_name) 
+     
+    f.tight_layout()
+
+    f.savefig(figure_name) 
     plt.close() 
     
     
@@ -494,14 +551,21 @@ def metric_calculation(x_train, y_train, x_test, y_test, model, name_model):
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--path-ICON', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the dataset is the ICON simulations')
-    arg('--k-fold', type=int, default=1, help='fold to be simulated: 1, 2, 3, 4, 5')    
+    arg('--path-ICON', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12_dropupbottom_Reff.nc', help='path of the dataset is the ICON simulations')
+    arg('--k-fold', type=int, default=2, help='fold to be simulated: 1, 2, 3, 4, 5')  
+    arg('--name-PCA', type=str, default='PCA_0', help='PCA_0, 1, 2, 3, 4, 5')
+
+        
     arg('--rttov-path', type = str, default = "/work/bb1036/rttov_share/rttov-131-36-channels-05022013-07182022.nc", help = 'Path of the dataset with only reflectances 1-19 and 26')   
     
-    arg('--path-rttov-test', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
-    arg('--path-ICON-test', type = str, default = '/home/jvillarreal/Documents/phd/dataset/data_rttov_T09.nc', help = 'Path of the test-dataset ')
+    arg('--rttov-path-refl-emmis', type = str, default = '/home/b/b381362/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
+    arg('--rttov-path-rad', type = str, default = '/home/b/b381362/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
+    
+    
+    arg('--path-rttov-test', type = str, default = '/home/b/b381362/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
+    arg('--path-ICON-test', type = str, default = '/work/bb1036/b381362/dataset/data_rttov_T09_dropupbottom_Reff.nc.nc', help = 'Path of the test-dataset ')
 
-    arg('--path-output', type=str, default='/home/jvillarreal/Documents/phd/output/ML_output', help='path of the output data is')
+    arg('--path-output', type=str, default='/home/b/b381362/output/ML_output', help='path of the output data is')
 
     args = parser.parse_args()
 
@@ -509,8 +573,12 @@ def main():
     path_output=args.path_output
 
     k_fold = args.k_fold
-    rttov_path = args.rttov_path
+    name_PCA = args.name_PCA
 
+        
+    rttov_path = args.rttov_path
+    rttov_path_refl_emmis = args.rttov_path_refl_emmis
+    rttov_path_rad = args.rttov_path_rad
 
     path_rttov_test = args.path_rttov_test
     path_ICON_test = args.path_ICON_test
@@ -519,10 +587,14 @@ def main():
     # file_name= os.path.splitext(os.path.basename(path_ICON))[0][:-5] 
 
     #######################  3D #############
-    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path, path_output, k_fold)
+    # x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, rttov_path, path_output, k_fold)
     
+    x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_path_refl_emmis)
+
     #######################  testing #############
-    df_x_img, df_y_img, lat_ds_img, lon_ds_img = get_data_xarray(path_ICON, rttov_path, path_output)
+    # df_x_img, df_y_img, lat_ds_img, lon_ds_img = get_data_xarray(path_ICON, rttov_path, path_output)
+    df_x_img, df_y_img, lat_ds_img, lon_ds_img = get_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
+
     #######################  endtesting #############
 
     #######################  end 3D #############
@@ -554,10 +626,10 @@ def main():
     print("columns test", testing_df_y_test.columns)
 
     x_train = training_df_x_train
-    y_train = training_df_y_train #['PCA_1']
+    y_train = training_df_y_train[name_PCA] #['PCA_0']
 
     x_test = testing_df_x_test
-    y_test = testing_df_y_test #['PCA_1']
+    y_test = testing_df_y_test[name_PCA] #['PCA_0']
     
 #===================================random forest ===================================
 #     rf_pcs = test_random_forest(train_x = x_train,
@@ -569,30 +641,71 @@ def main():
   
 # #=================================== MLPRegressor ===================================
 
-    clf = MLPRegressor(solver='lbfgs', 
-                   alpha=1e-5,     # used for regularization, ovoiding overfitting by penalizing large magnitudes
-                   hidden_layer_sizes=(5, 2), random_state=24)
-    clf.fit(x_train, y_train)
-    # res = clf.predict(train_data)
-    metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "MLRegressor")
-    model = clf
+    # clf = MLPRegressor(solver='lbfgs', 
+    #                alpha=1e-5,     # used for regularization, ovoiding overfitting by penalizing large magnitudes
+    #                hidden_layer_sizes=(5, 2), random_state=24)
+    # clf.fit(x_train, y_train)
+    # # res = clf.predict(train_data)
+    # metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "MLRegressor")
+    # model = clf
+    
+    # #=================================== MLPRegressor ===================================
+    mlp_reg = MLPRegressor(hidden_layer_sizes=(150,100,50),
+                       max_iter = 1,activation = 'relu',
+                       solver = 'adam')
+    mlp_reg.fit(x_train, y_train)
+    metric_calculation(x_train, y_train, x_test, y_test, model = mlp_reg, name_model = "MLRegressor_2")
+    model = mlp_reg
 
     print("$$$$$$$$$$$$$$$$$ testing model in the timestep T09 $$$$$$$$$$$$$$$$$")
-    metric_calculation(x_train, y_train, df_x_img, df_y_img, model = clf, name_model = "MLRegressor")
+    metric_calculation(x_train, y_train, df_x_img, df_y_img[name_PCA], model = model, name_model = "MLRegressor_T09")
 
   
 
     pred_pcs_img = model.predict(df_x_img)
-    xr_output = xr.Dataset(dict(refl_emis = pred_pcs_img))
-    # save output to netcdf 
-    xr_output.to_netcdf(path_output/k_fold +"_output_predicted.nc",'w')
+       
 
-    predicted_3D_img = from2to3d(pred_pcs_img)
+    # save output to netcdf 
+
+    # predicted_3D_img = from2to3d(pred_pcs_img, lat_ds_img, lon_ds_img)
+    # target_3D_img = from2to3d(df_y_img.to_numpy())
+
+    # plot_target_prediction(target = target_3D_img, prediction = predicted_3D_img, path_output = path_output, name_plot = k_fold +'target_pred_img_ML')
+
+
+            
+    predicted_2D_img = from1to2d(pred_pcs_img, lat_ds_img, lon_ds_img)
+    target_2D_img = from1to2d(df_y_img[name_PCA].to_numpy(), lat_ds_img, lon_ds_img)
+
+
+
+
     
-    target_3D_img = from2to3d(df_y_img.to_numpy())
-    plot_target_prediction(target = target_3D_img, prediction = predicted_3D_img, path_output = path_output, name_plot = k_fold +'target_pred_training_ML')
+
+    
+    print(np.shape(predicted_2D_img), np.shape(target_2D_img), np.shape(lat_ds_img), np.shape(lon_ds_img))
+  
+
+    
+#     m_pred = xr.DataArray(predicted_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(predicted_3D_img)[0]+1),lat_ds_img, lon_ds_img])
+#     xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
+    
+#     m_target = xr.DataArray(target_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(target_3D_img)[0]+1), lat_ds_img, lon_ds_img])
+    
+    m_pred = xr.DataArray(predicted_2D_img, dims=['lat','lon'], coords= [lat_ds_img, lon_ds_img])
+    m_target = xr.DataArray(target_2D_img, dims=['lat','lon'], coords= [lat_ds_img, lon_ds_img])
+    
+    xr_output = xr.Dataset(dict(prediction = m_pred, target = m_target))
+    xr_output.to_netcdf(path_output +"/output_pred_target.nc",'w')
     
     
+    # plot_target_prediction(target = target_2D_img, lat_ds = lat_ds_img, lon_ds = lon_ds_img, prediction = predicted_2D_img, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
+    plot_target_prediction(xr_output, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
+
+
+
+    xr_output.close()
+
         
 ##=================================== Gaussian Process ===================================
 
