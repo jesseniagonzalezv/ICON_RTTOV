@@ -77,27 +77,6 @@ def get_training_inputs(path_ICON):
     return df_train_inputs_variables_2D, train_inputs_variables_2D, train_inputs_variables_3D 
 
     
-def permutation_test(X_test, pr_truth, rf_pr):
-    #%%time
-    pr_result = permutation_importance(
-        # rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1, scoring=make_scorer(get_rmse_array))
-        rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1)
-
-    importances = rf_pr.model.model.feature_importances_
-    feature_names = list(X_test.columns)
-    
-    std = np.std([tree.feature_importances_ for tree in rf_pr.model.model.estimators_], axis=0)
-    forest_importances = pd.Series(importances, index=feature_names)
-    fig, ax = plt.subplots()
-    forest_importances.plot.bar(yerr=std, ax=ax)
-    ax.set_title("PC0")
-    ax.set_ylabel("Feature importances")
-    fig.tight_layout()
-            
-    figure_name = '{}/Feature importances.png'.format(path_output) #aca pasarr con todo path
-                   
-    fig.savefig(figure_name) 
-    plt.close()  
 
 ### the next should be the last version 
 def read_data_refl_emiss_rttov(path_rttov_test):
@@ -211,7 +190,9 @@ def old_scaler_PCA_input(train_inputs_2D, train_inputs_3D, path_output):
  
   
 '''
+ 
 
+    
 
 def read_data_refl_emiss_rttov( rttov_path_rad, rttov_path_refl_emmis): #rttov_path
   
@@ -882,26 +863,49 @@ def metric_calculation(x_train, y_train, x_test, y_test, model, name_model):
     print('score in training:', score)  
     score = model.score(x_test, y_test)
     print('score in testing:', score)    
+
+    
+
+def permutation_test(X_test, pr_truth, rf_pr):
+    #%%time
+    pr_result = permutation_importance(
+        # rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1, scoring=make_scorer(get_rmse_array))
+        rf_pr.model.model, X_test, pr_truth, n_repeats=10, random_state=42, n_jobs=1)
+
+    importances = rf_pr.model.model.feature_importances_
+    feature_names = list(X_test.columns)
+    
+    std = np.std([tree.feature_importances_ for tree in rf_pr.model.model.estimators_], axis=0)
+    forest_importances = pd.Series(importances, index=feature_names)
+    fig, ax = plt.subplots()
+    forest_importances.plot.bar(yerr=std, ax=ax)
+    ax.set_title("Feature importances")
+    ax.set_ylabel("Feature importances")
+    fig.tight_layout()
+            
+    figure_name = '{}/Feature importances.png'.format(path_output) #aca pasarr con todo path
+                   
+    fig.savefig(figure_name) 
+    plt.close() 
+    
     
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--path-ICON', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the dataset is the ICON simulations')
+    arg('--path-ICON', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12_dropupbottom_Reff.nc', help='path of the dataset is the ICON simulations')
     arg('--k-fold', type=int, default=1, help='fold to be simulated: 1, 2, 3, 4, 5')
     arg('--name-PCA', type=str, default='PCA_1', help='PCA_0, 1, 2, 3, 4, 5')
 
-    arg('--rttov-path-refl-emmis', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
-    arg('--rttov-path-rad', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
+    arg('--rttov-path-refl-emmis', type = str, default = '/home/b/b381362/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
+    arg('--rttov-path-rad', type = str, default = '/home/b/b381362/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
     
     arg('--rttov-path', type = str, default = "/work/bb1036/rttov_share/rttov-131-36-channels-05022013-07182022.nc", help = 'Path of the dataset with only reflectances 1-19 and 26')
 
+   
     
-    
-    
-    arg('--path-rttov-test', type = str, default = '/home/jvillarreal/Documents/phd/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
-    arg('--path-ICON-test', type = str, default = '/home/jvillarreal/Documents/phd/dataset/data_rttov_T09.nc', help = 'Path of the test-dataset ')
-
-    arg('--path-output', type=str, default='/home/jvillarreal/Documents/phd/output/ML_output', help='path of the output data is')
+    arg('--path-rttov-test', type = str, default = '/home/b/b381362/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
+    arg('--path-ICON-test', type = str, default = '/work/bb1036/b381362/dataset/data_rttov_T09_dropupbottom_Reff.nc.nc', help = 'Path of the test-dataset ')
+    arg('--path-output', type=str, default='/home/b/b381362/output/ML_output', help='path of the output data is')
 
     args = parser.parse_args()
 
