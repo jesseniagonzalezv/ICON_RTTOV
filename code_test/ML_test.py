@@ -6,6 +6,7 @@ import pandas as pd
 from eofs.xarray import Eof
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
+import seaborn as sns
 
 from lwp_nd import lwp_nd_input_ICON
 from PCA_radiances import PCA_calculation, variance_sklearn_plot, dataframe_csv #, convert_3D
@@ -28,7 +29,7 @@ import pickle
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.neural_network import MLPRegressor
-
+from sklearn.model_selection import GridSearchCV
 
 def read_data_refl_emiss_rttov( rttov_path_rad, rttov_path_refl_emmis): #rttov_path
   
@@ -146,12 +147,18 @@ def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_
     # df_x_train.drop(df_x_train[(df_x_train['Nd_max'] <400) & (df_x_train['lwp'] < 600)].index, inplace=True)
    
     #=============================Dataframe X  ====================================    
-    x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16)}  
-    x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
+    # x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16)}  
+    # x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
+ 
+    x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16), "v_10m": ds_x_train.v_10m.values}  
+    x_train_3D = { "clc": ds_x_train.cli.values, "cli": ds_x_train.clc.values, "clw": ds_x_train.clw.values, "hus": ds_x_train.hus.values}
     
 
-    x_test_2D = { "Nd_max": np.log(ds_x_test.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_test.lwp.values+ 1.0e-16)}  
-    x_test_3D = { "pres": ds_x_test.pres.values, "ta": ds_x_test.ta.values, "hus": ds_x_test.hus.values}
+    # x_test_2D = { "Nd_max": np.log(ds_x_test.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_test.lwp.values+ 1.0e-16)}  
+    # x_test_3D = { "pres": ds_x_test.pres.values, "ta": ds_x_test.ta.values, "hus": ds_x_test.hus.values}
+    x_test_2D = { "Nd_max": np.log(ds_x_test.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_test.lwp.values+ 1.0e-16), "v_10m": ds_x_test.v_10m.values}  
+    x_test_3D = { "clc": ds_x_test.cli.values, "cli": ds_x_test.clc.values, "clw": ds_x_test.clw.values, "hus": ds_x_test.hus.values}
+
     
     
     ds_x_train.close()
@@ -225,6 +232,14 @@ def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_
     y_train.close()
     y_test.close()
     
+#     print("shape before checking col/row 0, train, test", df_x_train.shape, df_x_test.shape)
+
+#     df_x_train = df_x_train.loc[:, (df_x_train != 0).any(axis=0)]
+#     df_x_test = df_x_test.loc[:, (df_x_test != 0).any(axis=0)]
+#     print("shape after checking col/row 0, train, test", df_x_train.shape, df_x_test.shape)
+
+
+    
     return x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds
 
 
@@ -263,8 +278,11 @@ def get_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_outpu
     # df_x_train.drop(df_x_train[(df_x_train['Nd_max'] <400) & (df_x_train['lwp'] < 600)].index, inplace=True)
    
     #=============================Dataframe X  ====================================    
-    x_2D = { "Nd_max": np.log(ds.Nd_max.values+ 1.0e-16), "lwp": np.log(ds.lwp.values+ 1.0e-16)}  
-    x_3D = { "pres": ds.pres.values, "ta": ds.ta.values, "hus": ds.hus.values}
+    # x_2D = { "Nd_max": np.log(ds.Nd_max.values+ 1.0e-16), "lwp": np.log(ds.lwp.values+ 1.0e-16)}     
+    x_2D = { "Nd_max": np.log(ds.Nd_max.values+ 1.0e-16), "lwp": np.log(ds.lwp.values+ 1.0e-16), "v_10m": ds.v_10m.values}  
+ 
+    # x_3D = { "pres": ds.pres.values, "ta": ds.ta.values, "hus": ds.hus.values}
+    x_3D = { "clc": ds.cli.values, "cli": ds.clc.values, "clw": ds.clw.values, "hus": ds.hus.values}
     
     ds.close()
     #=============================Dataframe X  ====================================    
@@ -304,8 +322,12 @@ def scaler_PCA_input(df_x_train, path_output):
     input: dataframe input with 2D and 3D
     output: x_train_df dataframe with the variable 2D and 3D PCAs
     '''
-    variables_2D = { "Nd_max", "lwp"}  
-    n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
+    # variables_2D = { "Nd_max", "lwp"}  
+    # n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
+    variables_2D = { "Nd_max", "lwp", "v_10m"}  
+    n_pca_variables_3D = { "clc": 22, "cli": 31, "clw": 27, "hus":15} #24(height, lat, lon)
+    # n_pca_variables_3D = { "clc": 5, "cli": 5, "clw": 5, "hus":5} #24(height, lat, lon)
+    
     training_df_x_train = pd.DataFrame()
 
     scaler = preprocessing.StandardScaler().fit(df_x_train)   
@@ -354,11 +376,11 @@ def PCA_read_input_target(df_y_train, path_output):
     PC_output (latxlon, number_pcs)
     '''
 ###########################################
-    df_y_train_normalized = preprocessing.normalize(df_y_train)
+    # df_y_train_normalized = preprocessing.normalize(df_y_train)
 ###########################################3
 
-    scaler_y = preprocessing.StandardScaler().fit(df_y_train_normalized)  #Standardize features by removing the mean and scaling to unit variance
-    X_scaled = scaler_y.transform(df_y_train_normalized)
+    scaler_y = preprocessing.StandardScaler().fit(df_y_train)  #Standardize features by removing the mean and scaling to unit variance
+    X_scaled = scaler_y.transform(df_y_train)
 
     ###### analysis  PCA###########################
     name_plot= "Explained_variance_refl_emiss"
@@ -387,7 +409,7 @@ def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
     '''
     testing_df_x_test = pd.DataFrame()
     
-    variables_2D = { "Nd_max", "lwp"}  
+    variables_2D = { "Nd_max", "lwp", "v_10m"}  
     # variables_3D = { "pres", "ta", "hus"} 
 
         
@@ -529,7 +551,8 @@ def metric_calculation(x_train, y_train, x_test, y_test, model, name_model):
     mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
     print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
     print('Accuracy: \n', round(100*(1 - mape), 2))
-
+    score = model.score(x_train, y_train)
+    print('score in training:', score)
     
     print("========================= Testing metrics ==========================") 
     gt =  y_test 
@@ -543,8 +566,7 @@ def metric_calculation(x_train, y_train, x_test, y_test, model, name_model):
     print('Accuracy: \n', round(100*(1 - mape), 2))
 
 
-    score = model.score(x_train, y_train)
-    print('score in training:', score)  
+  
     score = model.score(x_test, y_test)
     print('score in testing:', score)    
     
@@ -638,7 +660,14 @@ def main():
 #                                           test_y = y_test)
     
 #     metric_calculation(x_train, y_train, x_test, y_test, model = rf_pcs, name_model = "Random_forest")
-  
+#     model = rf_pcs
+    
+#         # view the feature scores
+
+#     print("$$$$$$$$$$$$$$$$$ testing model in the timestep T09 $$$$$$$$$$$$$$$$$")
+#     metric_calculation(x_train, y_train, df_x_img, df_y_img[name_PCA], model = model, name_model = "RF_T09")
+
+    
 # #=================================== MLPRegressor ===================================
 
     # clf = MLPRegressor(solver='lbfgs', 
@@ -649,18 +678,36 @@ def main():
     # metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "MLRegressor")
     # model = clf
     
+    
     # #=================================== MLPRegressor ===================================
     mlp_reg = MLPRegressor(hidden_layer_sizes=(150,100,50),
-                       max_iter = 1,activation = 'relu',
+                       max_iter = 50,activation = 'relu',
                        solver = 'adam')
     mlp_reg.fit(x_train, y_train)
     metric_calculation(x_train, y_train, x_test, y_test, model = mlp_reg, name_model = "MLRegressor_2")
     model = mlp_reg
 
+#     param_grid = {
+#     'hidden_layer_sizes': [(250,100,50), (150,80,40), (100,50,30)],
+#     'max_iter': [50, 150],
+#     'activation': ['tanh', 'relu'],
+#     'solver': ['sgd', 'adam'],
+#     'alpha': [0.0001, 0.05],
+#     'learning_rate': ['constant','adaptive'],
+# }
+    
+#     grid = GridSearchCV(model, param_grid, n_jobs= -1, cv=5)
+#     grid.fit(x_train, y_train)
+
+#     print("=========== best parameters $$$$$$$$$$$$$$$$$")
+
+#     print(grid.best_params_) 
+    
     print("$$$$$$$$$$$$$$$$$ testing model in the timestep T09 $$$$$$$$$$$$$$$$$")
     metric_calculation(x_train, y_train, df_x_img, df_y_img[name_PCA], model = model, name_model = "MLRegressor_T09")
 
-  
+      # #===================================================================================
+
 
     pred_pcs_img = model.predict(df_x_img)
        
@@ -702,6 +749,25 @@ def main():
     # plot_target_prediction(target = target_2D_img, lat_ds = lat_ds_img, lon_ds = lon_ds_img, prediction = predicted_2D_img, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
     plot_target_prediction(xr_output, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
 
+
+#     ##===================================
+#     feature_scores = pd.Series(model.feature_importances_, index = x_train.columns).sort_values(ascending=False)
+
+#     print(feature_scores)
+
+#     f, ax = plt.subplots(figsize=(30, 24))
+#     ax = sns.barplot(x=feature_scores, y=feature_scores.index, data = x_train)
+#     ax.set_title("Visualize feature scores of the features")
+#     ax.set_yticklabels(feature_scores.index)
+#     ax.set_xlabel("Feature importance score")
+#     ax.set_ylabel("Features")
+#     plt.show()
+#     figure_name = '{}/feature importances.png'.format(path_output) #aca pasarr con todo path
+     
+#     f.tight_layout()
+
+#     f.savefig(figure_name) 
+##===================================
 
 
     xr_output.close()
