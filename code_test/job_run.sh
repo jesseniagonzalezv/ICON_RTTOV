@@ -7,7 +7,7 @@
 #SBATCH --nodes=1                                                                                                                                                                            
 ##SBATCH --ntasks=30                                                                                                                                                                           
 ##SBATCH --cpus-per-task=6                                                                                                                                                                    
-#SBATCH --time=04:30:00                                                                                                                                                                       
+#SBATCH --time=07:30:00                                                                                                                                                                       
 #SBATCH --job-name=testing                                                                                                                                                              
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=jessenia.gv@gmail.com # Email address for notifications
@@ -63,13 +63,51 @@ date >> models-results.log
 #     done
 # done
 
-for i in 2 #1 2 3 4 5
+# for i in 1 #2 #1 2 3 4 5
+# do
+#     for n in 2 #1 #0 #1 2 3 4 5 
+#     do
+# python ML_test.py --k-fold $i --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_output/ML_output --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> log_RF_fold_${i}_PCA_${n}_MLR2_old_output_all_PCA.txt 
+#     done
+# done
+
+# for i in 1 3 4 5 #2
+# do
+#     for n in  0 2 3 4 5 #1 #0 #1 2 3 4 5 
+#     do
+# python ML_test.py --k-fold $i --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_output/ML_new_inputs --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_output/ML_new_inputs/log_RF_fold_${i}_PCA_${n}_MLR2_old_output_new_inputs.txt 
+#     done
+# done
+
+
+path_results=$HOME/output/MLRegression 
+
+
+########### MLRegression
+# for k in 5  #2
+# do
+#     for n in  0 1 2 3 4 5 
+#     do
+# python ML_test.py --k-fold $k --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_${n}_MLR_old_output_new_inputs.txt 
+#     done
+# done
+# for k in 5 1 3 4  
+# do
+#     for n in  0 1 2 3 4 5 
+#     do
+# python ML_test.py --k-fold $k --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_${n}_MLR_old_output_new_inputs.txt 
+#     done
+# done
+
+
+for k in 2 
 do
-    for n in 0 #1 2 3 4 5 
+    for n in  0 
     do
-python ML_test.py --k-fold $i --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_output/ML_output --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> log_ML_fold_2_PCA_0_MLR2_old_output.txt 
+python ML_test.py --k-fold $k --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_${n}_MLR_old_output_new_inputs.txt 
     done
 done
+
 
 # >> /scratch/b/b381362/models-results_MLPRegressor.log
 echo end >> models-results.log
