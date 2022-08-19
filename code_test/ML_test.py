@@ -10,6 +10,7 @@ import seaborn as sns
 
 from lwp_nd import lwp_nd_input_ICON
 from PCA_radiances import PCA_calculation, variance_sklearn_plot, dataframe_csv #, convert_3D
+from sklearn.metrics import r2_score
 
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import make_scorer, check_scoring, mean_squared_error
@@ -150,7 +151,7 @@ def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_
     # x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16)}  
     # x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
  
-    x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16), "v_10m": ds_x_train.v_10m.values}  
+    x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16), "v_10m": ds_x_train.v_10m.values}  #1.0e-3
     x_train_3D = { "clc": ds_x_train.cli.values, "cli": ds_x_train.clc.values, "clw": ds_x_train.clw.values, "hus": ds_x_train.hus.values}
     
 
@@ -377,10 +378,14 @@ def PCA_read_input_target(df_y_train, path_output):
     '''
 ###########################################
     # df_y_train_normalized = preprocessing.normalize(df_y_train)
+#     
+    # transformer = preprocessing.MinMaxScaler(feature_range = (0,1))
+    # df_y_train_normalized = transformer.fit_transform(df_y_train)
+
 ###########################################3
 
-    scaler_y = preprocessing.StandardScaler().fit(df_y_train)  #Standardize features by removing the mean and scaling to unit variance
-    X_scaled = scaler_y.transform(df_y_train)
+    scaler_y = preprocessing.StandardScaler().fit(df_y_train) #df_y_train_normalized)  #Standardize features by removing the mean and scaling to unit variance
+    X_scaled = scaler_y.transform(df_y_train) #df_y_train_normalized)
 
     ###### analysis  PCA###########################
     name_plot= "Explained_variance_refl_emiss"
@@ -436,10 +441,15 @@ def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
 def get_test_output(df, path_output, scaler, pca):
 
 ############################################333    
-    df_normalized = preprocessing.normalize(df)
+    # df_normalized = preprocessing.normalize(df) 
+    
+    ##?????????????? i need to select the same min max???
+    # transformer = preprocessing.MinMaxScaler(feature_range = (0,1))
+    # df_normalized = transformer.fit_transform(df)
+    
 ###########################################3
-    # test_scaled= scaler.transform(df)
-    test_scaled= scaler.transform(df_normalized)
+    test_scaled= scaler.transform(df)
+    # test_scaled= scaler.transform(df_normalized)
 
     test_pca = pca.transform(test_scaled)
     
@@ -488,34 +498,89 @@ def from1to2d(x, lat_ds, lon_ds):
             
     return x_2d 
 
-# def plot_target_prediction(target,lat_ds, lon_ds, prediction, path_output, name_plot):
-#     n_img = len(target)
-#     fig = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
+def plot_target_prediction_old(target,lat_ds, lon_ds, prediction, path_output, name_plot):
+    n_img = np.shape(target)[0]
+    f = plt.figure(figsize=(5 * n_img, 2 * 2 ),facecolor = 'white')  #WxH
     
-#     fig.suptitle("Comparation between target and prediction", fontsize = 24)
+    f.suptitle("Comparation between target and prediction", fontsize = 24)
 
-#     x = lon_ds #.values  
-#     y = lat_ds #.values
+    x = lon_ds.values  
+    y = lat_ds.values
     
-#     for i in range(n_img):
+    for i in range(n_img):
 
-#         axes = plt.subplot(2,n_img, i + 1)
-#         # ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
-#         ctr = axes.pcolormesh(x, y,prediction,cmap = "cividis",shading='auto')
+        axes = plt.subplot(2,n_img, i + 1)
+        ctr = axes.pcolormesh(x, y,prediction[i],cmap = "cividis",shading='auto')
+        # ctr = axes.pcolormesh(x, y, prediction,cmap = "cividis",shading='auto')
 
-#         axes.set_title(f"Prediction PC_{i}",fontsize=14)
-#         plt.colorbar(ctr)
+        axes.set_title(f"Prediction PC_{i}",fontsize=14)
+        plt.colorbar(ctr)
         
-#         # Target
-#         axes0 = plt.subplot(2,n_img, i + 1 + n_img)
-#         # ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
-#         ctr = axes0.pcolormesh(x, y,target,cm
-#         # Emulatorap = "cividis",shading='auto')
-#         axes0.set_title(f"Target PC_{i}",fontsize=14)
+        # Target
+        axes0 = plt.subplot(2,n_img, i + 1 + n_img)
+        ctr = axes0.pcolormesh(x, y,target[i],cmap = "cividis",shading='auto')
+        # ctr = axes0.pcolormesh(x, y, target,cmap = "cividis",shading='auto')
+        # Emulatorap = "cividis",shading='auto')
+        axes0.set_title(f"Target PC_{i}",fontsize=14)
 
-#         plt.colorbar(ctr)
-#     plt.tight_layout() #para q no queden muchos borde blanco
+        plt.colorbar(ctr)
+                               
+    figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
 
+    f.tight_layout()
+
+    f.savefig(figure_name, dpi= 60) 
+    plt.close() 
+                               
+def plot_target_prediction_3D(ds_out, path_output, name_plot):
+
+    n_img = np.shape(ds_out['target'])[0]
+    print(" ================ number of channels", n_img)
+    # n_channels
+    # f, axes = plt.subplots(2, n_img, figsize=(4*2, 1*4*1.066)) #width of 15 inches and 7 inches in height.
+    f = plt.figure(figsize=(4 * n_img, 4*1.066 * 2) ,facecolor = 'white')  #WxH
+    f.subplots_adjust(wspace=0.4, hspace=0.4)
+    
+    # axli = axes.ravel()
+    position =list(range(1,n_img*2+1)) #[1:76]
+    position_pred = position[:n_img] # position[1::2]
+    position_target = position[n_img:] #position[::2] #  
+
+    
+    for i in range(n_img):
+#         plt.suptitle("ssim: " + str(ssim(ds_out['target'][i]
+# , ds_out['prediction'][i]
+# )) + " rmse: " + str(mean_squared_error(ds_out['target'][i]
+# , ds_out['prediction'][i]
+# )))
+        result_ssim =  ssim(ds_out['target'][i], ds_out['prediction'][i])
+        result_rmse =  mean_squared_error(ds_out['target'][i], ds_out['prediction'][i])
+        result_score = r2_score(ds_out['target'][i], ds_out['prediction'][i])
+                             
+        # plt.figtext(0.5,0.5, "ssim: {:.3f}, rmse: {:.3f}".format(result_ssim, result_rmse), ha="center", va="top", fontsize=14)
+        
+
+            
+        plt.subplots_adjust(hspace = 0.3 )
+
+        axes0 = plt.subplot(2, n_img, position_pred[i]) ##2,m_img, +n_img)
+        ds_out['prediction'][i].plot(ax = axes0, cmap='cividis') #, vmin=0, vmax=0.12, cmap='jet')# cmap='cividis', 
+
+        # axes0.text(6.1, 1.36, "ssim: {:.3f}, rmse: {:.3f}".format(result_ssim, result_rmse), color='b',fontsize=18)
+
+        axes0.set_title( "ssim: {:.3f}, rmse: {:.3f}, score: {:.3f}  \n channel = {}".format(result_ssim, result_rmse, result_score, int(ds_out.prediction.channel[i])))#f'month = {i}')
+            
+        axes = plt.subplot(2, n_img, position_target[i]) 
+        ds_out['target'][i].plot(ax = axes, cmap='cividis') #, vmin=0, vmax=0.12, cmap='jet')
+        
+
+    figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
+
+    f.tight_layout()
+
+    f.savefig(figure_name, dpi= 60) 
+    plt.close() 
+                               
 def plot_target_prediction(ds_out, path_output, name_plot):
 
     # n_channels = len(output_ds)
@@ -531,58 +596,47 @@ def plot_target_prediction(ds_out, path_output, name_plot):
 
     plt.suptitle("ssim: " + str(ssim(ds_out['target'], ds_out['prediction'])) + " rmse: " + str(mean_squared_error(ds_out['target'], ds_out['prediction'])))
 
+
     figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
      
     f.tight_layout()
 
-    f.savefig(figure_name) 
+    f.savefig(figure_name, dpi= 60) 
     plt.close() 
     
     
-def metric_calculation(x_train, y_train, x_test, y_test, model, name_model):
-    gt =  y_train 
-    pred = model.predict(x_train)
-    print("*************************** Results of the model {} *********************************".format(name_model))
+def metric_calculation(x, y, model, data_name):
+    """
+    data_name: training, testing, validation, T12, T09
+    """
+    gt =  y
+    pred = model.predict(x)
 
-    print("========================= Training metrics ==========================") 
+    print("========================= {} metrics ==========================".format(data_name)) 
     print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
     print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
     print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
     mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
     print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
     print('Accuracy: \n', round(100*(1 - mape), 2))
-    score = model.score(x_train, y_train)
-    print('score in training:', score)
     
-    print("========================= Testing metrics ==========================") 
-    gt =  y_test 
-    pred = model.predict(x_test)
- 
-    print('Mean Absolute Error (MAE):', metrics.mean_absolute_error(gt, pred))
-    print('Mean Squared Error (MSE):', metrics.mean_squared_error(gt, pred))
-    print('Root Mean Squared Error (RMSE):', np.sqrt(metrics.mean_squared_error(gt, pred)))
-    mape = np.mean(np.abs((gt - pred) / np.abs(gt)))
-    print('Mean Absolute Percentage Error (MAPE): \n', round(mape * 100, 2))
-    print('Accuracy: \n', round(100*(1 - mape), 2))
+    score = model.score(x, y)
+    print('score in {}: {}'.format(data_name, score))
+    
 
-
-  
-    score = model.score(x_test, y_test)
-    print('score in testing:', score)    
     
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--path-ICON', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12_dropupbottom_Reff.nc', help='path of the dataset is the ICON simulations')
     arg('--k-fold', type=int, default=2, help='fold to be simulated: 1, 2, 3, 4, 5')  
-    arg('--name-PCA', type=str, default='PCA_0', help='PCA_0, 1, 2, 3, 4, 5')
+    arg('--name-PCA', type=str, default='PCA_0', help='PCA_0, 1, 2, 3, 4, 5 or all PCA= all')
+    arg('--name-model', type=str, default='RF', help='name of the model to train RF, MLR')
 
-        
     arg('--rttov-path', type = str, default = "/work/bb1036/rttov_share/rttov-131-36-channels-05022013-07182022.nc", help = 'Path of the dataset with only reflectances 1-19 and 26')   
     
     arg('--rttov-path-refl-emmis', type = str, default = '/home/b/b381362/output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc', help = 'Path of the dataset with only reflectances 1-19 and 26')
     arg('--rttov-path-rad', type = str, default = '/home/b/b381362/output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc', help = 'Path of the dataset with only radiances')
-    
     
     arg('--path-rttov-test', type = str, default = '/home/b/b381362/output/output-rttov/rttov-131-data-icon-1to36-T09.nc', help = 'Path of the test-dataset ')
     arg('--path-ICON-test', type = str, default = '/work/bb1036/b381362/dataset/data_rttov_T09_dropupbottom_Reff.nc.nc', help = 'Path of the test-dataset ')
@@ -596,7 +650,7 @@ def main():
 
     k_fold = args.k_fold
     name_PCA = args.name_PCA
-
+    name_model = args.name_model
         
     rttov_path = args.rttov_path
     rttov_path_refl_emmis = args.rttov_path_refl_emmis
@@ -640,7 +694,7 @@ def main():
     testing_df_y_test = get_test_output(df_y_test, path_output, scaler_y, pca_y)
     
     #######################  testing #############
-    df_y_img = get_test_output(df_y_img, path_output, scaler_y, pca_y)
+    df_y_img_scaler_pca = get_test_output(df_y_img, path_output, scaler_y, pca_y)
     #######################  endtesting #############
     
     
@@ -648,112 +702,35 @@ def main():
     print("columns test", testing_df_y_test.columns)
 
     x_train = training_df_x_train
-    y_train = training_df_y_train[name_PCA] #['PCA_0']
 
     x_test = testing_df_x_test
-    y_test = testing_df_y_test[name_PCA] #['PCA_0']
     
+
+    
+    if name_PCA != "all":
+        y_train = training_df_y_train[name_PCA] #['PCA_0']
+        y_test = testing_df_y_test[name_PCA] #['PCA_0']
+        y_test_img = df_y_img_scaler_pca[name_PCA]
+
+    else:
+        y_train = training_df_y_train
+        y_test = testing_df_y_test
+        y_test_img = df_y_img_scaler_pca
+        
+
+    if name_model == "RF":
 #===================================random forest ===================================
-#     rf_pcs = test_random_forest(train_x = x_train,
-#                                           train_y = y_train, 
-#                                           test_x = x_test, 
-#                                           test_y = y_test)
-    
-#     metric_calculation(x_train, y_train, x_test, y_test, model = rf_pcs, name_model = "Random_forest")
-#     model = rf_pcs
-    
-#         # view the feature scores
+        rf_pcs = test_random_forest(train_x = x_train,
+                                              train_y = y_train, 
+                                              test_x = x_test, 
+                                              test_y = y_test)
 
-#     print("$$$$$$$$$$$$$$$$$ testing model in the timestep T09 $$$$$$$$$$$$$$$$$")
-#     metric_calculation(x_train, y_train, df_x_img, df_y_img[name_PCA], model = model, name_model = "RF_T09")
-
-    
-# #=================================== MLPRegressor ===================================
-
-    # clf = MLPRegressor(solver='lbfgs', 
-    #                alpha=1e-5,     # used for regularization, ovoiding overfitting by penalizing large magnitudes
-    #                hidden_layer_sizes=(5, 2), random_state=24)
-    # clf.fit(x_train, y_train)
-    # # res = clf.predict(train_data)
-    # metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "MLRegressor")
-    # model = clf
-    
-    
-    # #=================================== MLPRegressor ===================================
-    mlp_reg = MLPRegressor(hidden_layer_sizes=(150,100,50),
-                       max_iter = 50,activation = 'relu',
-                       solver = 'adam')
-    mlp_reg.fit(x_train, y_train)
-    metric_calculation(x_train, y_train, x_test, y_test, model = mlp_reg, name_model = "MLRegressor_2")
-    model = mlp_reg
-
-#     param_grid = {
-#     'hidden_layer_sizes': [(250,100,50), (150,80,40), (100,50,30)],
-#     'max_iter': [50, 150],
-#     'activation': ['tanh', 'relu'],
-#     'solver': ['sgd', 'adam'],
-#     'alpha': [0.0001, 0.05],
-#     'learning_rate': ['constant','adaptive'],
-# }
-    
-#     grid = GridSearchCV(model, param_grid, n_jobs= -1, cv=5)
-#     grid.fit(x_train, y_train)
-
-#     print("=========== best parameters $$$$$$$$$$$$$$$$$")
-
-#     print(grid.best_params_) 
-    
-    print("$$$$$$$$$$$$$$$$$ testing model in the timestep T09 $$$$$$$$$$$$$$$$$")
-    metric_calculation(x_train, y_train, df_x_img, df_y_img[name_PCA], model = model, name_model = "MLRegressor_T09")
-
-      # #===================================================================================
-
-
-    pred_pcs_img = model.predict(df_x_img)
-       
-
-    # save output to netcdf 
-
-    # predicted_3D_img = from2to3d(pred_pcs_img, lat_ds_img, lon_ds_img)
-    # target_3D_img = from2to3d(df_y_img.to_numpy())
-
-    # plot_target_prediction(target = target_3D_img, prediction = predicted_3D_img, path_output = path_output, name_plot = k_fold +'target_pred_img_ML')
-
-
-            
-    predicted_2D_img = from1to2d(pred_pcs_img, lat_ds_img, lon_ds_img)
-    target_2D_img = from1to2d(df_y_img[name_PCA].to_numpy(), lat_ds_img, lon_ds_img)
-
-
-
-
-    
-
-    
-    print(np.shape(predicted_2D_img), np.shape(target_2D_img), np.shape(lat_ds_img), np.shape(lon_ds_img))
-  
-
-    
-#     m_pred = xr.DataArray(predicted_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(predicted_3D_img)[0]+1),lat_ds_img, lon_ds_img])
-#     xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
-    
-#     m_target = xr.DataArray(target_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(target_3D_img)[0]+1), lat_ds_img, lon_ds_img])
-    
-    m_pred = xr.DataArray(predicted_2D_img, dims=['lat','lon'], coords= [lat_ds_img, lon_ds_img])
-    m_target = xr.DataArray(target_2D_img, dims=['lat','lon'], coords= [lat_ds_img, lon_ds_img])
-    
-    xr_output = xr.Dataset(dict(prediction = m_pred, target = m_target))
-    xr_output.to_netcdf(path_output +"/output_pred_target.nc",'w')
-    
-    
-    # plot_target_prediction(target = target_2D_img, lat_ds = lat_ds_img, lon_ds = lon_ds_img, prediction = predicted_2D_img, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
-    plot_target_prediction(xr_output, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
-
-
-#     ##===================================
-#     feature_scores = pd.Series(model.feature_importances_, index = x_train.columns).sort_values(ascending=False)
-
-#     print(feature_scores)
+        model = rf_pcs
+        
+        #     ##===================================
+    # feature_scores = pd.Series(model.feature_importances_, index = x_train.columns).sort_values(ascending=False)
+    # print(" ========== Feature score ========== ")
+    # print(feature_scores)
 
 #     f, ax = plt.subplots(figsize=(30, 24))
 #     ax = sns.barplot(x=feature_scores, y=feature_scores.index, data = x_train)
@@ -769,18 +746,111 @@ def main():
 #     f.savefig(figure_name) 
 ##===================================
 
+    elif name_model == "MLP":
+    # #=================================== MLPRegressor ===================================
+        mlp_reg = MLPRegressor(hidden_layer_sizes=(150,100,50),
+                           # max_iter = 50,activation = 'relu',
+                           max_iter = 1,activation = 'relu', #to test my code
 
-    xr_output.close()
+                           solver = 'adam')
+        mlp_reg.fit(x_train, y_train)
+        
+        model = mlp_reg
+          
+    elif name_model == "GP":
+        kernel = 1 * RBF(length_scale=1.0, length_scale_bounds=(1e-2, 1e2))
+        gaussian_process = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
+        gaussian_process.fit(x_train, y_train)
+        # metric_calculation(x_train, y_train, x_test, y_test, model = clf, data_name = "GP")
+
+    ##===========================s===========================================
+          
+    else:
+        print("select a model")
+                    
+    print(" *************************** Results of the model {} ********************************* ".format(name_model))
+    metric_calculation(x_train, y_train, model = model, data_name = "training")
+    metric_calculation(x_test, y_test, model = model, data_name = "testing")
+
+    # print(" ******** testing model in the timestep T09 ********** ")
+    name_img_plot = "testing_T09"
+    metric_calculation(df_x_img, y_test_img, model = model, data_name = name_img_plot)
+
+    pred_pcs_img = model.predict(df_x_img) 
+    # pred_inversed_pca = pca_y.inverse_transform(df_y_img_scaler_pca) #test inv transfor
+    pred_inversed_pca = pca_y.inverse_transform(pred_pcs_img)
+    pred_inversed_scaler =  scaler_y.inverse_transform(pred_inversed_pca)
+       
+    # ploting the whole image T09 as prediction
+    if name_PCA != 'all':
+   #### 2d
+        predicted_2D_img = from1to2d(pred_inversed_scaler, lat_ds_img, lon_ds_img)
+        target_2D_img = from1to2d(df_y_img[name_PCA].to_numpy(), lat_ds_img, lon_ds_img)
+        print("2D shape pred, target, lat, lon", np.shape(predicted_2D_img), np.shape(target_2D_img), np.shape(lat_ds_img), np.shape(lon_ds_img))
+        m_pred = xr.DataArray(predicted_2D_img, dims=['lat','lon'], coords= [lat_ds_img, lon_ds_img])
+        m_target = xr.DataArray(target_2D_img, dims=['lat','lon'], coords= [lat_ds_img, lon_ds_img])
+        
+        plot_target_prediction(target = target_2D_img, lat_ds = lat_ds_img, lon_ds = lon_ds_img, prediction = predicted_2D_img, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
+
+        name_img_plot = name_img_plot + name_PCA
+          
+    elif name_PCA == 'all':          
+        predicted_3D_img = from2to3d(pred_inversed_scaler, lat_ds_img, lon_ds_img)
+        target_3D_img = from2to3d(df_y_img.to_numpy(), lat_ds_img, lon_ds_img)
+        
+        m_pred = xr.DataArray(predicted_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(predicted_3D_img)[0]+1),lat_ds_img, lon_ds_img])
+        # xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
+    
+        m_target = xr.DataArray(target_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(target_3D_img)[0]+1), lat_ds_img, lon_ds_img])
+         
+        #############PCA 
+        pca_predicted_3D_img = from2to3d(pred_pcs_img, lat_ds_img, lon_ds_img)
+        pca_target_3D_img = from2to3d(df_y_img_scaler_pca.to_numpy(), lat_ds_img, lon_ds_img)
+        
+        pca_m_pred = xr.DataArray(pca_predicted_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(pca_predicted_3D_img)[0]+1),lat_ds_img, lon_ds_img])
+        # xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
+        pca_m_target = xr.DataArray(pca_target_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(pca_target_3D_img)[0]+1), lat_ds_img, lon_ds_img])
+        
+        pca_xr_output = xr.Dataset(dict(prediction = pca_m_pred, target = pca_m_target))
+        
+        plot_target_prediction_3D(pca_xr_output, path_output = path_output, name_plot = name_model + 'pca_target_pred_img_k_fold_' + str(k_fold))
+        
+        print(" ======== PCA 3D shape pred, target, lat, lon", np.shape(m_pred), np.shape(m_target), np.shape(lat_ds_img), np.shape(lon_ds_img))
+                               
+        plot_target_prediction_old(pca_target_3D_img, lat_ds_img, lon_ds_img, pca_predicted_3D_img, path_output, name_plot = name_model + 'old_plot_pca_target_pred_img_k_fold_' )
+                               
+        ############### end PCA
+        print(" ======== 3D shape pred, target, lat, lon", np.shape(m_pred), np.shape(m_target), np.shape(lat_ds_img), np.shape(lon_ds_img))
+
+                               
+
+ 
+          
+    xr_output = xr.Dataset(dict(prediction = m_pred, target = m_target, pca_prediction = pca_m_pred, pca_target = pca_m_target))
+    # xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
+    # xr_output.to_netcdf(path_output +"/output_pred_target.nc",'w')
+    print(xr_output)
+    print(xr_output['prediction'][2].min().values, xr_output['prediction'][2].max().values)
+    
+    xr_output.to_netcdf((path_output + '/outputs_target_pred_{}.nc').format(name_img_plot),'w')
+   
+    plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold))
+
+    xr_output.close()    
+
+          
+    # save output to netcdf 
+   # unnormalize 
+          
+
+                                    
+                    
+
+
+
 
         
-##=================================== Gaussian Process ===================================
 
-#     kernel = 1 * RBF(length_scale=1.0, length_scale_bounds=(1e-2, 1e2))
-#     gaussian_process = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9)
-#     gaussian_process.fit(x_train, y_train)
-#     metric_calculation(x_train, y_train, x_test, y_test, model = clf, name_model = "GP")
-
-##======================================================================
 #     print("#############pickle #########################")
 #     # save the model to disk
 #     filename = 'finalized_model.sav'
@@ -796,7 +866,7 @@ def main():
 
     
 #     print("#############joblib #########################")
-#     joblib.dump(rf_pcs, "./random_forest.joblib")
+    joblib.dump(rf_pcs, path_output + "/random_forest_checkit.joblib")
 #     loaded_rf = joblib.load("./random_forest.joblib")
 #     score = loaded_rf.score(x_train, y_train)
 #     print('score in training:', score)  
@@ -808,7 +878,27 @@ def main():
     # permutation_test(x = train_x_df, y = train_y_df, model = rf_pcs)
 
 
-
+        
+# #=================================== MLPRegressor ===================================
+        # clf = MLPRegressor(solver='lbfgs', 
+        #                alpha=1e-5,     # used for regularization, ovoiding overfitting by penalizing large magnitudes
+        #                hidden_layer_sizes=(5, 2), random_state=24)
+        # clf.fit(x_train, y_train)
+        # # res = clf.predict(train_data)
+        # model = clf
+    #     param_grid = {
+    #     'hidden_layer_sizes': [(250,100,50), (150,80,40), (100,50,30)],
+    #     'max_iter': [50, 150],
+    #     'activation': ['tanh', 'relu'],
+    #     'solver': ['sgd', 'adam'],
+    #     'alpha': [0.0001, 0.05],
+    #     'learning_rate': ['constant','adaptive'],
+    # }
+    #     grid = GridSearchCV(model, param_grid, n_jobs= -1, cv=5)
+    #     grid.fit(x_train, y_train)
+    #     print("=========== best parameters $$$$$$$$$$$$$$$$$")
+    #     print(grid.best_params_) 
+      # #===================================================================================
 
 #     sys.stdout.close()
 if __name__ == '__main__':

@@ -156,7 +156,7 @@ def main():
     fig.subplots_adjust(wspace=0.1, hspace=0.2)
 
     position =list(range(1,n_imgs+1)) #[1:76]
-    position_rttov = position[:n_imgs//2 +1] #position[::2]
+    position_rttov = position[:n_imgs//2] #position[::2] quite el  +1
     position_MODIS = position[n_imgs//2:] #[1::2]
 
 
