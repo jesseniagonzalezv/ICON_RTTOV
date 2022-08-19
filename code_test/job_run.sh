@@ -80,7 +80,7 @@ date >> models-results.log
 # done
 
 
-path_results=$HOME/output/MLRegression 
+# path_results=$HOME/output/MLRegression 
 
 
 ########### MLRegression
@@ -100,14 +100,37 @@ path_results=$HOME/output/MLRegression
 # done
 
 
-for k in 2 
-do
-    for n in  0 
-    do
-python ML_test.py --k-fold $k --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_${n}_MLR_old_output_new_inputs.txt 
-    done
-done
+# for k in 2 
+# do
+#     for n in  0 
+#     do
+# python ML_test.py --k-fold $k --name-PCA PCA_${n} --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_${n}_MLR_old_output_new_inputs.txt 
+#     done
+# done
 
+
+###################test all the pca 
+
+# path_results=$HOME/output/RandomF 
+
+# for k in 5 2 1 3 4  
+# do
+# python ML_test.py --k-fold $k --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_${n}_old_output_new_inputs_scaler.txt 
+# done
+
+###################test all the pca only test to check wverything is working
+
+
+path_results=$HOME/output/RF_testcode 
+name_pca="all"
+# name_model="MLP"
+name_model="RF"
+
+
+for k in 4  
+do
+python ML_test.py --k-fold $k --name-PCA $name_pca --name-model $name_model --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_old_output_new_inputs_scaler.txt  
+done
 
 # >> /scratch/b/b381362/models-results_MLPRegressor.log
 echo end >> models-results.log
