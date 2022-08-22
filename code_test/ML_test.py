@@ -23,7 +23,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 import os
-
+from sklearn.preprocessing import RobustScaler
 import joblib
 import pickle
 
@@ -330,8 +330,11 @@ def scaler_PCA_input(df_x_train, path_output):
     # n_pca_variables_3D = { "clc": 5, "cli": 5, "clw": 5, "hus":5} #24(height, lat, lon)
     
     training_df_x_train = pd.DataFrame()
-
-    scaler = preprocessing.StandardScaler().fit(df_x_train)   
+#     scaler = preprocessing.StandardScaler().fit(df_x_train)  
+    
+    scaler = RobustScaler().fit(df_x_train)  
+    # d = scaler.fit_transform(df_x_train)
+    
     df = pd.DataFrame(scaler.transform(df_x_train), columns = df_x_train.columns) 
 
     print("=================== After scaler dataframe training saved=======================================")    
@@ -749,8 +752,7 @@ def main():
     elif name_model == "MLP":
     # #=================================== MLPRegressor ===================================
         mlp_reg = MLPRegressor(hidden_layer_sizes=(150,100,50),
-                           # max_iter = 50,activation = 'relu',
-                           max_iter = 1,activation = 'relu', #to test my code
+                           max_iter = 50,activation = 'relu', #to test my code
 
                            solver = 'adam')
         mlp_reg.fit(x_train, y_train)
@@ -792,7 +794,6 @@ def main():
         
         plot_target_prediction(target = target_2D_img, lat_ds = lat_ds_img, lon_ds = lon_ds_img, prediction = predicted_2D_img, path_output = path_output, name_plot = 'target_pred_img_ML_k_fold_' + str(k_fold))
 
-        name_img_plot = name_img_plot + name_PCA
           
     elif name_PCA == 'all':          
         predicted_3D_img = from2to3d(pred_inversed_scaler, lat_ds_img, lon_ds_img)
@@ -832,7 +833,7 @@ def main():
     print(xr_output)
     print(xr_output['prediction'][2].min().values, xr_output['prediction'][2].max().values)
     
-    xr_output.to_netcdf((path_output + '/outputs_target_pred_{}.nc').format(name_img_plot),'w')
+    xr_output.to_netcdf((path_output + '/{}_outputs_target_pred_{}_fold{}_pca{}.nc').format(name_model, name_img_plot,k_fold,name_PCA),'w')
    
     plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold))
 
@@ -866,7 +867,7 @@ def main():
 
     
 #     print("#############joblib #########################")
-    joblib.dump(rf_pcs, path_output + "/random_forest_checkit.joblib")
+    joblib.dump(model, path_output + "/random_forest_checkit.joblib")
 #     loaded_rf = joblib.load("./random_forest.joblib")
 #     score = loaded_rf.score(x_train, y_train)
 #     print('score in training:', score)  
