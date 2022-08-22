@@ -121,15 +121,23 @@ date >> models-results.log
 ###################test all the pca only test to check wverything is working
 
 
-path_results=$HOME/output/RF_testcode 
+# path_results=$HOME/output/RF_testcode 
+path_results=$HOME/output/robustscaler 
+
 name_pca="all"
 # name_model="MLP"
 name_model="RF"
 
 
+# for k in 4  
+# do
+# python ML_test.py --k-fold $k --name-PCA $name_pca --name-model $name_model --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_{$name_model}_fold_${k}_PCA_old_output_new_inputs.txt  
+# done
+
+name_model="MLP"
 for k in 4  
 do
-python ML_test.py --k-fold $k --name-PCA $name_pca --name-model $name_model --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_RF_fold_${k}_PCA_old_output_new_inputs_scaler.txt  
+python ML_test.py --k-fold $k --name-PCA $name_pca --name-model $name_model --path-ICON $path_dataset/data_rttov_T12_dropupbottom_Reff.nc --path-output $path_results --rttov-path-refl-emmis $path_output/output-rttov/rttov-131-data-icon-1to19-26-T12.nc --rttov-path-rad $path_output/output-rttov/rttov-13-data-icon-1-to-36-not-flip.nc --path-rttov-test $path_output/output-rttov/rttov-131-data-icon-1to36-T09.nc --path-ICON-test $path_dataset/data_rttov_T09_dropupbottom_Reff.nc &> $path_results/log_${name_model}_fold_${k}_PCA_old_output_new_inputs.txt  
 done
 
 # >> /scratch/b/b381362/models-results_MLPRegressor.log
