@@ -32,6 +32,8 @@ from sklearn.gaussian_process.kernels import RBF
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
 
+
+
 def read_data_refl_emiss_rttov( rttov_path_rad, rttov_path_refl_emmis): #rttov_path
   
     #input: path of the radiances and reflectances
@@ -151,7 +153,9 @@ def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_
     # x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16)}  
     # x_train_3D = { "pres": ds_x_train.pres.values, "ta": ds_x_train.ta.values, "hus": ds_x_train.hus.values}
  
-    x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16), "v_10m": ds_x_train.v_10m.values}  #1.0e-3
+    # x_train_2D = { "Nd_max": np.log(ds_x_train.Nd_max.values+ 1.0e-16), "lwp": np.log(ds_x_train.lwp.values+ 1.0e-16), "v_10m": ds_x_train.v_10m.values}  #1.0e-3
+    x_train_2D = { "Nd_max": ds_x_train.Nd_max.values, "lwp": ds_x_train.lwp.values, "v_10m": ds_x_train.v_10m.values}  #1.0e-3
+
     x_train_3D = { "clc": ds_x_train.cli.values, "cli": ds_x_train.clc.values, "clw": ds_x_train.clw.values, "hus": ds_x_train.hus.values}
     
 
@@ -182,6 +186,17 @@ def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_
     print("=================== Dataframe training =======================================")    
     name_file = 'inputs_statistics_training'  
     df_x_train.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    
+        
+    index_names = df_x_train[ (df_x_train['lwp'] > 1000) & (df_x_train['Nd_max'] > 1000)].index
+  
+    # drop these given row
+    # indexes from dataFrame
+    df_x_train.drop(index_names, inplace = True)
+
+    df_x_train["lwp"] = np.log(df_x_train["lwp"]+ 1.0e-16)
+    df_x_train["Nd_max"] = np.log(df_x_train["Nd_max"]+ 1.0e-16)
+        
     
     for key, var in x_test_2D.items():  
         df = pd.DataFrame(data = var.flatten()
@@ -215,7 +230,9 @@ def get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_
                   path_output = path_output, 
                   name_file = name_file)
      
-    
+
+    df_y_train.drop(index_names, inplace = True)
+
     # # df_y_train = preprocessing.normalize(df_y_train)
 
         
@@ -330,9 +347,9 @@ def scaler_PCA_input(df_x_train, path_output):
     # n_pca_variables_3D = { "clc": 5, "cli": 5, "clw": 5, "hus":5} #24(height, lat, lon)
     
     training_df_x_train = pd.DataFrame()
-#     scaler = preprocessing.StandardScaler().fit(df_x_train)  
+    scaler = preprocessing.StandardScaler().fit(df_x_train)  
     
-    scaler = RobustScaler().fit(df_x_train)  
+    # scaler = RobustScaler().fit(df_x_train)  
     # d = scaler.fit_transform(df_x_train)
     
     df = pd.DataFrame(scaler.transform(df_x_train), columns = df_x_train.columns) 
@@ -470,13 +487,13 @@ def get_test_output(df, path_output, scaler, pca):
 def test_random_forest(train_x, train_y, test_x, test_y):
                                      
     rf_model = RandomForestRegressor(bootstrap=True, ccp_alpha=0.0, criterion='mse',
-                      max_depth=None, max_features='auto', max_leaf_nodes=None,
+                      max_depth=10, max_features='auto', max_leaf_nodes=None, #max_depth=None,
                       max_samples=None, min_impurity_decrease=0.0,
                       #min_impurity_split=None, min_samples_leaf=1,
                       min_samples_leaf=1,
                       min_samples_split=2, min_weight_fraction_leaf=0.0,
-                      n_estimators=100, n_jobs=None, oob_score=False,
-                      random_state=None, verbose=0, warm_start=False)                                      
+                      n_estimators=30, n_jobs=None, oob_score=False,
+                      random_state=None, verbose=0, warm_start=False)     #n_estimators=100                                  
     rf_pcs = rf_model.fit(train_x, train_y)
     
     return rf_pcs
@@ -535,7 +552,7 @@ def plot_target_prediction_old(target,lat_ds, lon_ds, prediction, path_output, n
     f.savefig(figure_name, dpi= 60) 
     plt.close() 
                                
-def plot_target_prediction_3D(ds_out, path_output, name_plot):
+def plot_target_prediction_3D(ds_out, path_output, name_plot, plot_type):
 
     n_img = np.shape(ds_out['target'])[0]
     print(" ================ number of channels", n_img)
@@ -557,7 +574,7 @@ def plot_target_prediction_3D(ds_out, path_output, name_plot):
 # , ds_out['prediction'][i]
 # )))
         result_ssim =  ssim(ds_out['target'][i], ds_out['prediction'][i])
-        result_rmse =  mean_squared_error(ds_out['target'][i], ds_out['prediction'][i])
+        result_mse =  mean_squared_error(ds_out['target'][i], ds_out['prediction'][i])
         result_score = r2_score(ds_out['target'][i], ds_out['prediction'][i])
                              
         # plt.figtext(0.5,0.5, "ssim: {:.3f}, rmse: {:.3f}".format(result_ssim, result_rmse), ha="center", va="top", fontsize=14)
@@ -568,10 +585,17 @@ def plot_target_prediction_3D(ds_out, path_output, name_plot):
 
         axes0 = plt.subplot(2, n_img, position_pred[i]) ##2,m_img, +n_img)
         ds_out['prediction'][i].plot(ax = axes0, cmap='cividis') #, vmin=0, vmax=0.12, cmap='jet')# cmap='cividis', 
-
+        
         # axes0.text(6.1, 1.36, "ssim: {:.3f}, rmse: {:.3f}".format(result_ssim, result_rmse), color='b',fontsize=18)
 
-        axes0.set_title( "ssim: {:.3f}, rmse: {:.3f}, score: {:.3f}  \n channel = {}".format(result_ssim, result_rmse, result_score, int(ds_out.prediction.channel[i])))#f'month = {i}')
+        if plot_type == "spectral":
+            axes0.set_title( "ssim: {:.3f}, mse: {:.3f}, score: {:.3f}  \n channel = {}".format(result_ssim, result_mse, result_score, int(ds_out.prediction.channel[i])))#f'month = {i}')
+            print("score channel {}: {}".format(ds_out.prediction.channel[i].values, result_score)) 
+            
+        elif plot_type == "pca":
+            axes0.set_title( "ssim: {:.3f}, mse: {:.3f}, score: {:.3f}  \n component = {}".format(result_ssim, result_mse, result_score, int(ds_out.prediction.component[i])))#f'month = {i}')
+            print("score componente {}: {}".format(ds_out.prediction.component[i].values, result_score)) 
+
             
         axes = plt.subplot(2, n_img, position_target[i]) 
         ds_out['target'][i].plot(ax = axes, cmap='cividis') #, vmin=0, vmax=0.12, cmap='jet')
@@ -597,7 +621,7 @@ def plot_target_prediction(ds_out, path_output, name_plot):
     ds_out['target'].plot(ax = axli[0] )#, vmin=0, vmax=0.12, cmap='jet')
     ds_out['prediction'].plot(ax = axli[1])#, vmin=0, vmax=0.12, cmap='jet')# cmap='cividis', 
 
-    plt.suptitle("ssim: " + str(ssim(ds_out['target'], ds_out['prediction'])) + " rmse: " + str(mean_squared_error(ds_out['target'], ds_out['prediction'])))
+    plt.suptitle("ssim: " + str(ssim(ds_out['target'], ds_out['prediction'])) + " smse: " + str(mean_squared_error(ds_out['target'], ds_out['prediction'])))
 
 
     figure_name = '{}/{}.png'.format(path_output, name_plot) #aca pasarr con todo path
@@ -625,6 +649,9 @@ def metric_calculation(x, y, model, data_name):
     
     score = model.score(x, y)
     print('score in {}: {}'.format(data_name, score))
+    print('score 2 in {}: {}'.format(data_name, r2_score(gt, pred)))
+
+    
     
 
     
@@ -808,13 +835,13 @@ def main():
         pca_predicted_3D_img = from2to3d(pred_pcs_img, lat_ds_img, lon_ds_img)
         pca_target_3D_img = from2to3d(df_y_img_scaler_pca.to_numpy(), lat_ds_img, lon_ds_img)
         
-        pca_m_pred = xr.DataArray(pca_predicted_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(pca_predicted_3D_img)[0]+1),lat_ds_img, lon_ds_img])
+        pca_m_pred = xr.DataArray(pca_predicted_3D_img, dims=['component','lat','lon'], coords= [range(1,np.shape(pca_predicted_3D_img)[0]+1),lat_ds_img, lon_ds_img])
         # xr_output.to_netcdf(path_output/"output_predicted.nc",'w')
-        pca_m_target = xr.DataArray(pca_target_3D_img, dims=['channel','lat','lon'], coords= [range(1,np.shape(pca_target_3D_img)[0]+1), lat_ds_img, lon_ds_img])
+        pca_m_target = xr.DataArray(pca_target_3D_img, dims=['component','lat','lon'], coords= [range(1,np.shape(pca_target_3D_img)[0]+1), lat_ds_img, lon_ds_img])
         
         pca_xr_output = xr.Dataset(dict(prediction = pca_m_pred, target = pca_m_target))
         
-        plot_target_prediction_3D(pca_xr_output, path_output = path_output, name_plot = name_model + 'pca_target_pred_img_k_fold_' + str(k_fold))
+        plot_target_prediction_3D(pca_xr_output, path_output = path_output, name_plot = name_model + 'pca_target_pred_img_k_fold_' + str(k_fold), plot_type = "pca")
         
         print(" ======== PCA 3D shape pred, target, lat, lon", np.shape(m_pred), np.shape(m_target), np.shape(lat_ds_img), np.shape(lon_ds_img))
                                
@@ -835,7 +862,7 @@ def main():
     
     xr_output.to_netcdf((path_output + '/{}_outputs_target_pred_{}_fold{}_pca{}.nc').format(name_model, name_img_plot,k_fold,name_PCA),'w')
    
-    plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold))
+    plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold), plot_type = "spectral")
 
     xr_output.close()    
 
@@ -867,7 +894,10 @@ def main():
 
     
 #     print("#############joblib #########################")
-    joblib.dump(model, path_output + "/random_forest_checkit.joblib")
+    plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold), plot_type = "spectral")
+
+    
+    joblib.dump(model, "{}/{}_k_fold_{}.joblib".format(path_output,name_model,str(k_fold)))
 #     loaded_rf = joblib.load("./random_forest.joblib")
 #     score = loaded_rf.score(x_train, y_train)
 #     print('score in training:', score)  
