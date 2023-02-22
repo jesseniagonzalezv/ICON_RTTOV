@@ -335,6 +335,63 @@ def get_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_outpu
 
 
   
+# def scaler_PCA_input(df_x_train, path_output):
+#     '''
+#     input: dataframe input with 2D and 3D
+#     output: x_train_df dataframe with the variable 2D and 3D PCAs
+#     '''
+#     # variables_2D = { "Nd_max", "lwp"}  
+#     # n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
+#     variables_2D = { "Nd_max", "lwp", "v_10m"}  
+#     n_pca_variables_3D = { "clc": 22, "cli": 31, "clw": 27, "hus":15} #24(height, lat, lon)
+#     # n_pca_variables_3D = { "clc": 5, "cli": 5, "clw": 5, "hus":5} #24(height, lat, lon)
+    
+#     training_df_x_train = pd.DataFrame()
+#     scaler = preprocessing.StandardScaler().fit(df_x_train)  
+    
+#     # scaler = RobustScaler().fit(df_x_train)  
+#     # d = scaler.fit_transform(df_x_train)
+    
+#     df = pd.DataFrame(scaler.transform(df_x_train), columns = df_x_train.columns) 
+
+#     print("=================== After scaler dataframe training saved=======================================")    
+#     name_file = 'after_scaler_inputs_statistics_training'  
+#     df.describe().to_csv("{}/{}.csv".format(path_output, name_file))     
+    
+  
+    
+#     pca_3D = {}
+    
+#     for key in variables_2D: 
+#         training_df_x_train=pd.concat([training_df_x_train, df[key]], axis=1)
+
+#     for key, var in n_pca_variables_3D.items():  
+#         var_scaled = df.filter(like=key)                 
+#         n_pca = var 
+#         name_plot= "{}_Explained_variance_{}_variable".format(n_pca, key)
+#         print("============== Variable: {}  ========================================".format(key))
+#         X_pca, pca = PCA_calculation(var_scaled.to_numpy(), name_plot,n_pca, path_output)
+#         #pca_3D.append(pca)
+#         pca_3D[key] = pca
+
+#         # print( 'Original shape: {}'.format(str(PC.shape)))
+#         print( 'Original shape: {}'.format(str(var_scaled.shape)))
+#         print( 'Reduced shape: {}'.format(str(X_pca.shape)))
+#         principalDf = pd.DataFrame(data = X_pca
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca)])
+#         training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
+
+#     print("================ dataframe all after PCA saved=============================")
+#     training_df_x_train.describe().to_csv(path_output + "/inputs_after_PCA_StandardScaler.csv")    
+#     # count_nan 
+#     count_nan_in_df = training_df_x_train.isnull().sum()
+#     print("================ values of Nan in training_input_variables_df =====================")
+#     print (count_nan_in_df)  #can i used 0 in the lwp and nd?
+
+
+#     return training_df_x_train, scaler, pca_3D, n_pca_variables_3D
+
+  
 def scaler_PCA_input(df_x_train, path_output):
     '''
     input: dataframe input with 2D and 3D
@@ -342,8 +399,8 @@ def scaler_PCA_input(df_x_train, path_output):
     '''
     # variables_2D = { "Nd_max", "lwp"}  
     # n_pca_variables_3D = { "pres": 5, "ta": 10, "hus":24} #(height, lat, lon)
-    variables_2D = { "Nd_max", "lwp", "v_10m"}  
-    n_pca_variables_3D = { "clc": 22, "cli": 31, "clw": 27, "hus":15} #24(height, lat, lon)
+    variables_2D = { "Nd_max", "lwp"}  #, "v_10m"}  
+    # n_pca_variables_3D = { "clc": 22, "cli": 31, "clw": 27, "hus":15} #24(height, lat, lon)
     # n_pca_variables_3D = { "clc": 5, "cli": 5, "clw": 5, "hus":5} #24(height, lat, lon)
     
     training_df_x_train = pd.DataFrame()
@@ -362,24 +419,39 @@ def scaler_PCA_input(df_x_train, path_output):
     
     pca_3D = {}
     
+
+
     for key in variables_2D: 
         training_df_x_train=pd.concat([training_df_x_train, df[key]], axis=1)
 
-    for key, var in n_pca_variables_3D.items():  
-        var_scaled = df.filter(like=key)                 
-        n_pca = var 
-        name_plot= "{}_Explained_variance_{}_variable".format(n_pca, key)
-        print("============== Variable: {}  ========================================".format(key))
-        X_pca, pca = PCA_calculation(var_scaled.to_numpy(), name_plot,n_pca, path_output)
-        #pca_3D.append(pca)
-        pca_3D[key] = pca
+    X = df.drop(columns =["lwp","Nd_max"])
+    name_plot= "Explained_variance__variable_all"
+    n_pca = 90 
+    n_pca_variables_3D_2D = n_pca
+    X_pca, pca = PCA_calculation(X.to_numpy(), name_plot,n_pca, path_output)
+    pca_3D = pca
 
-        # print( 'Original shape: {}'.format(str(PC.shape)))
-        print( 'Original shape: {}'.format(str(var_scaled.shape)))
-        print( 'Reduced shape: {}'.format(str(X_pca.shape)))
-        principalDf = pd.DataFrame(data = X_pca
-             , columns = [f"{key}_PCA_{i}" for i in range(n_pca)])
-        training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
+        
+    principalDf = pd.DataFrame(data = X_pca
+         , columns = [f"3D_PCA_{i}" for i in range(n_pca)])
+    training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
+
+    
+#     for key, var in n_pca_variables_3D.items():  
+#         var_scaled = df.filter(like=key)                 
+#         n_pca = var 
+#         name_plot= "{}_Explained_variance_{}_variable".format(n_pca, key)
+#         print("============== Variable: {}  ========================================".format(key))
+#         X_pca, pca = PCA_calculation(var_scaled.to_numpy(), name_plot,n_pca, path_output)
+#         #pca_3D.append(pca)
+#         pca_3D[key] = pca
+
+#         # print( 'Original shape: {}'.format(str(PC.shape)))
+#         print( 'Original shape: {}'.format(str(var_scaled.shape)))
+#         print( 'Reduced shape: {}'.format(str(X_pca.shape)))
+#         principalDf = pd.DataFrame(data = X_pca
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca)])
+#         training_df_x_train = pd.concat([training_df_x_train, principalDf], axis=1)
 
     print("================ dataframe all after PCA saved=============================")
     training_df_x_train.describe().to_csv(path_output + "/inputs_after_PCA_StandardScaler.csv")    
@@ -389,7 +461,8 @@ def scaler_PCA_input(df_x_train, path_output):
     print (count_nan_in_df)  #can i used 0 in the lwp and nd?
 
 
-    return training_df_x_train, scaler, pca_3D, n_pca_variables_3D
+    return training_df_x_train, scaler, pca_3D, n_pca_variables_3D_2D
+
 
 
 def PCA_read_input_target(df_y_train, path_output):
@@ -428,13 +501,44 @@ def PCA_read_input_target(df_y_train, path_output):
 
     
 ##################### 
+# def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
+#     '''
+#     PC_output (latxlon, number_pcs)
+#     '''
+#     testing_df_x_test = pd.DataFrame()
+    
+#     variables_2D = { "Nd_max", "lwp", "v_10m"}
+
+#     # variables_3D = { "pres", "ta", "hus"} 
+
+        
+#     df = pd.DataFrame(scaler.transform(df_x_test), columns = df_x_test.columns) 
+    
+#     print("=================== After scaler Dataframe testing =======================================")    
+#     name_file = 'after_scaler_inputs_statistics_testing'  
+#     df.describe().to_csv("{}/{}.csv".format(path_output, name_file))  
+    
+    
+#     for key in variables_2D: 
+#         testing_df_x_test=pd.concat([testing_df_x_test, df[key]], axis=1)
+
+        
+#     for key in n_pca_variables_3D:  
+#         var_scaled = df.filter(like=key)   
+#         principalDf = pd.DataFrame(data = pca_3D[key] .transform(var_scaled.to_numpy()) #pca_3D [i] i de 1 
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
+#         testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
+   
+#     return testing_df_x_test
+
 def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
     '''
     PC_output (latxlon, number_pcs)
     '''
     testing_df_x_test = pd.DataFrame()
     
-    variables_2D = { "Nd_max", "lwp", "v_10m"}  
+    variables_2D = { "Nd_max", "lwp"}
+
     # variables_3D = { "pres", "ta", "hus"} 
 
         
@@ -448,12 +552,20 @@ def get_test_input(path_output, df_x_test, scaler, pca_3D, n_pca_variables_3D):
     for key in variables_2D: 
         testing_df_x_test=pd.concat([testing_df_x_test, df[key]], axis=1)
 
+    print("n_pca_variables_3D", n_pca_variables_3D)
         
-    for key in n_pca_variables_3D:  
-        var_scaled = df.filter(like=key)   
-        principalDf = pd.DataFrame(data = pca_3D[key] .transform(var_scaled.to_numpy()) #pca_3D [i] i de 1 
-             , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
-        testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
+    X = df.drop(columns =["lwp","Nd_max"])
+    principalDf = pd.DataFrame(data = pca_3D.transform(X.to_numpy()) #pca_3D [i] i de 1 
+                               
+         , columns = [f"3D_PCA_{i}" for i in range(n_pca_variables_3D)])
+    testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
+
+                               
+#     for key in n_pca_variables_3D:  
+#         var_scaled = df.filter(like=key)   
+#         principalDf = pd.DataFrame(data = pca_3D[key] .transform(var_scaled.to_numpy()) #pca_3D [i] i de 1 
+#              , columns = [f"{key}_PCA_{i}" for i in range(n_pca_variables_3D[key])])
+#         testing_df_x_test = pd.concat([testing_df_x_test, principalDf], axis=1)
    
     return testing_df_x_test
 
@@ -573,9 +685,9 @@ def plot_target_prediction_3D(ds_out, path_output, name_plot, plot_type):
 # )) + " rmse: " + str(mean_squared_error(ds_out['target'][i]
 # , ds_out['prediction'][i]
 # )))
-        result_ssim =  ssim(ds_out['target'][i], ds_out['prediction'][i])
-        result_mse =  mean_squared_error(ds_out['target'][i], ds_out['prediction'][i])
-        result_score = r2_score(ds_out['target'][i], ds_out['prediction'][i])
+        result_ssim =  ssim(ds_out['target'][i].values.flatten(), ds_out['prediction'][i].values.flatten())
+        result_mse =  mean_squared_error(ds_out['target'][i].values.flatten(), ds_out['prediction'][i].values.flatten())
+        result_score = r2_score(ds_out['target'][i].values.flatten(), ds_out['prediction'][i].values.flatten())
                              
         # plt.figtext(0.5,0.5, "ssim: {:.3f}, rmse: {:.3f}".format(result_ssim, result_rmse), ha="center", va="top", fontsize=14)
         
@@ -590,11 +702,11 @@ def plot_target_prediction_3D(ds_out, path_output, name_plot, plot_type):
 
         if plot_type == "spectral":
             axes0.set_title( "ssim: {:.3f}, mse: {:.3f}, score: {:.3f}  \n channel = {}".format(result_ssim, result_mse, result_score, int(ds_out.prediction.channel[i])))#f'month = {i}')
-            print("score channel {}: {}".format(ds_out.prediction.channel[i].values, result_score)) 
+            print("score channel {}: {}".format(ds_out.prediction.channel[i].values.flatten(), result_score)) 
             
         elif plot_type == "pca":
             axes0.set_title( "ssim: {:.3f}, mse: {:.3f}, score: {:.3f}  \n component = {}".format(result_ssim, result_mse, result_score, int(ds_out.prediction.component[i])))#f'month = {i}')
-            print("score componente {}: {}".format(ds_out.prediction.component[i].values, result_score)) 
+            print("score componente {}: {}".format(ds_out.prediction.component[i].values.flatten(), result_score)) 
 
             
         axes = plt.subplot(2, n_img, position_target[i]) 
