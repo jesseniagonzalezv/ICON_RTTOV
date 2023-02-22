@@ -48,12 +48,12 @@ do
 #	seltimestep_3D=7 #20130502.5208333=12:30pm T12 
 #	seltimestep_2D=31 #20130502.5208333=12:30pm T12
     
-    # other time
+    # other time T09, 
 #	seltimestep_3D=1
 #	seltimestep_2D=1
 
     # T = 13:40
-	seltimestep_3D=9
+	seltimestep_3D=9 #20130502.569444444
 	seltimestep_2D=41
 
     
