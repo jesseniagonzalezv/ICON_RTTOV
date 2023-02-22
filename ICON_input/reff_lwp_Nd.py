@@ -9,8 +9,8 @@ import os
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--path-in', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12.nc', help='path of the initial data is')
-    # arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the initial data is')
+    # arg('--path-in', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12.nc', help='path of the initial data is')
+    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12.nc', help='path of the initial data is')
     # arg('--path-out', type=str, default='/home/b/b381362/output/output_ICON', help='path of the copied data is' )  #/home/jvillarreal/Documents/phd/output/input_icon
     args = parser.parse_args()
     fname = args.path_in 

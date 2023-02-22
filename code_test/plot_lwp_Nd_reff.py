@@ -7,8 +7,14 @@ import os
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('--path-in', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12_dropupbottom_Reff.nc', help='path of the initial data is')
-    arg('--path-out', type=str, default='/home/b/b381362/output/output_ICON', help='path of the copied data is' ) 
+    # arg('--path-in', type=str, default='/work/bb1036/b381362/dataset/data_rttov_T12_dropupbottom_Reff.nc', help='path of the initial data is')
+    arg('--path-in', type=str, default='/home/jvillarreal/Documents/phd/dataset/data_rttov_T12_dropupbottom_Reff.nc', help='path of the initial data is')
+
+
+    # arg('--path-out', type=str, default='/home/b/b381362/output/output_ICON', help='path of the copied data is' )
+
+    arg('--path-out', type=str, default='/home/jvillarreal/Documents/phd/output/output_ICON', help='path of the copied data is' )
+
     args = parser.parse_args()
     fname = args.path_in 
     file_name= os.path.splitext(os.path.basename(fname))[0][:-5] #os.path.splitext(fname)[0][:-5] with path
@@ -34,7 +40,7 @@ def main():
     figure_name = os.sep.join([args.path_out,file_name +'_Nd-Reff.png'])    
     fig.savefig(figure_name) 
     print(figure_name)
-
+    plt.show()
     ds.close()
 
 if __name__ == '__main__':
