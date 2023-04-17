@@ -810,7 +810,7 @@ def main():
     x_train_2D, x_train_3D, x_test_2D, x_test_3D, y_train, y_test,  df_x_train, df_x_test, df_y_train, df_y_test, lat_test_ds, lon_test_ds = get_split_data_xarray(path_ICON, path_output, k_fold, rttov_path_rad, rttov_path_refl_emmis)
 
     #######################  testing #############
-    # df_x_img, df_y_img, lat_ds_img, lon_ds_img = get_data_xarray(path_ICON, rttov_path, path_output)
+    #df_x_img, df_y_img, lat_ds_img, lon_ds_img = get_data_xarray(path_ICON_test, path_rttov_test, path_output)
     df_x_img, df_y_img, lat_ds_img, lon_ds_img = get_data_xarray(path_ICON, rttov_path_rad, rttov_path_refl_emmis, path_output)
 
     #######################  endtesting #############
@@ -1006,7 +1006,7 @@ def main():
 
     
 #     print("#############joblib #########################")
-    plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold), plot_type = "spectral")
+   # plot_target_prediction_3D(xr_output, path_output = path_output, name_plot = name_model + 'target_pred_img_k_fold_' + str(k_fold), plot_type = "spectral")
 
     
     joblib.dump(model, "{}/{}_k_fold_{}.joblib".format(path_output,name_model,str(k_fold)))
