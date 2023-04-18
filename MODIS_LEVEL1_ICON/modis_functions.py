@@ -4,14 +4,36 @@ import numpy as np
 import pandas as pd
 import pprint
 from pyhdf.SD import SD, SDC
+import numpy.ma as ma
+from netCDF4 import Dataset    # Note: python is case-sensitive!
+import xarray as xr
+import argparse
 
 def dataset_dic(file):
+    """
+    Prints information about the given file and the datasets it contains.
+
+    Arguments:
+    - file -- An instance of the netCDF4.Dataset class representing a netCDF file.
+
+    Returns: None
+    - Prints -- Information about the file such as its format, dimensions variables 
+    """
     print(file.info())
     datasets_dic = file.datasets()
     for idx, sds in enumerate(datasets_dic.keys()):
         print(idx, sds)
-
+        
 def read_coordinate(file_g):
+    """
+    Reads the latitude and longitude coordinates from a netCDF file.
+
+    Arguments:
+    - file_g: A netCDF4.Dataset file.
+
+    Returns:
+    - latitude, longitude -- A tuple containing the latitude and longitude coordinate arrays extracted from the file.
+    """
     lat_2D = file_g.select('Latitude')
     lon_2D=file_g.select('Longitude')
     lat=lat_2D.get()
@@ -20,17 +42,49 @@ def read_coordinate(file_g):
     longitude=lon #.flatten()
     return latitude, longitude
 
+
+def grid_coordinate(limit, gridSize_lat, gridSize_lon):
+    """
+    Generates a 2D grid of latitude and longitude coordinates within a given geographic limit.
+
+    Parameters:
+    - limit: A list containing the minimum and maximum latitude and longitude values in the format [minlat, maxlat, minlon, maxlon].
+    - gridSize_lat: The grid cell size in the latitude direction, in degrees.
+    - gridSize_lon: The grid cell size in the longitude direction, in degrees.
+
+    Returns:
+    - A tuple containing two 2D arrays representing the latitude and longitude coordinates of the generated grid. i = longitude and j = latitude
+    """
+    minlat = float(limit[0])
+    maxlat = float(limit[1])
+    minlon = float(limit[2])
+    maxlon = float(limit[3])
+    dx_lon = gridSize_lon
+    dy_lat = gridSize_lat
+
+    xdim=int(1+((maxlon-minlon)/dx_lon))
+    ydim=int(1+((maxlat-minlat)/dy_lat))
+    grdlat=np.full([xdim,ydim],-1.0)
+    grdlon=np.full([xdim,ydim],-1.0)
+    for i in range(xdim):
+        for j in range(ydim):
+            grdlon[i,j]=dx_lon*i+minlon
+            grdlat[i,j]=dy_lat*j+minlat
+    return grdlat,grdlon 
+
+
+
 def read_level1_array(file_i, var_name, type_variable):
     '''
     Function to obtain the radiances or reflectances values
         Based on https://hdfeos.org/zoo/LAADS/MYD021KM.A2002226.0000.006.2012033082925.hdf.py
 
-    Input:
+    Argguments:
      - file_i : name of the MODIS file
      - var_name : name of the varibale to read ('EV_250_Aggr1km_RefSB', 'EV_500_Aggr1km_RefSB', 'EV_1KM_RefSB', 'EV_1KM_Emissive')
      - type_variable: "reflectance" or "radiance" 
     
-    Output: 
+    Return: 
      - variable_raw (ChxHxW): MODIS values with any modification, raw data (H - Height , W - Width , Ch - channel)
      - variable_calibrated (ChxHxW): MODIS values after offset and scale
     '''
@@ -63,7 +117,7 @@ def read_level1_array(file_i, var_name, type_variable):
         invalid = np.logical_or(invalid, data == FillValue)
 
 
-        
+        #### this i am comment to test 
         data[invalid] = np.nan #_FillValue #np.nan
     
         #print("type_variable",type_variable)
@@ -86,7 +140,16 @@ def read_level1_array(file_i, var_name, type_variable):
 
 
 def read_bands(file_i, var_name):
+    """
+    Reads a variable from a netCDF file representing the values of an n-dimensional array.
 
+    Arguments:
+    - file_i: AnnetCDF4.Dataset file.
+    - var_name: The name of the variable to be read from the file.
+
+    Returns:
+    - A numpy array containing the values of the specified variable in the file.
+    """
     variable_sds= file_i.select(var_name)    
     bands = variable_sds.get()
 
@@ -94,190 +157,23 @@ def read_bands(file_i, var_name):
 
 
 
-def grid_coordinate(limit,gridSize ):
-    minlat = float(limit[0])
-    maxlat = float(limit[1])
-    minlon = float(limit[2])
-    maxlon = float(limit[3])
-    dx = gridSize
-    xdim=int(1+((maxlon-minlon)/dx))
-    ydim=int(1+((maxlat-minlat)/dx))
-    grdlat=np.full([xdim,ydim],-1.0)
-    grdlon=np.full([xdim,ydim],-1.0)
-    for i in range(xdim):
-        for j in range(ydim):
-            grdlon[i,j]=dx*i+minlon
-            grdlat[i,j]=dx*j+minlat
-    return grdlat,grdlon 
-
-
-
-def grid(limit, gsize, indata, inlat, inlon):
-    dx = gsize
-    dy = gsize
-    minlat = float(limit[0])
-    maxlat = float(limit[1])
-    minlon = float(limit[2])
-    maxlon = float(limit[3])
-    xdim = int(1 + ((maxlon - minlon) / dx))
-    ydim = int(1 + ((maxlat - minlat) / dy))
-    
-    sum_var  = np.zeros((xdim, ydim))
-    count = np.zeros((xdim, ydim))
-    avg_var = np.full([xdim, ydim], -1.0) #Return a new array of given shape and type, filled with fill_value.
-
-#pv= np.nan #_FillValue=999999 #0 #65535  #decide if it is needed to pass as parameter or other value 0 ? nan?
-
-    #indata[indata < 0] = 0
-    
-    # print("-------------------------------------indata grid ini-------------------",np.min(indata),np.max(indata), "max min indata-----")
-    # pprint.pprint(indata)
-    # print("-------------------------------------fin indata grid ini-------------------",np.min(indata),np.max(indata), "max min indata-----")
-
-    mask_re = np.where(indata != np.nan, 1, 0)  #con 0 tbn funcionaba  indata is a mask ...converting a masked element to nan
-
-    # print('mask_re valuesn min, max:',mask_re, np.min(mask_re),np.max(mask_re))
-    # pprint.pprint(mask_re)
-    
-    # print("-------------------------------------indata-------------------",np.min(indata),np.max(indata), "max min indata-----")
-    # pprint.pprint(indata)
-    # print("----------------------------fin---------indata-------------------")
-
-
-    for ii in range(len(indata)):
-
-        if (inlat[ii] >= minlat and inlat[ii] <= maxlat and inlon[ii] >= minlon and inlon[ii] <= maxlon):
-
-            i = round((inlon[ii] - minlon) / dx)
-            i = int(i)
-            j = round((inlat[ii] - minlat) / dy)
-            j = int(j)
-            #sum_var[i, j] = sum_var[i, j] + indata[ii]
-            sum_var[i, j] =  indata[ii]
-            #count[i, j] += mask_re[ii]
-
-    #count = np.ma.masked_equal(count, 0)  #### xq divide a la sumaa
-
-
-    # print(count)
-    avg_var = sum_var #/ count
-
-    #print('------------------------------DATAFRAMA---------------------')
-    #print(np.shape(avg_var))
-    #x_flat = avg_var.reshape(avg_var.shape[0]*avg_var.shape[0],-1) #
-    x_flat = np.reshape(avg_var, (avg_var.shape[0]*avg_var.shape[1],-1))
-
-    #print(np.shape(avg_var))
- 
-    # df=pd.DataFrame(x_flat) 
-    # count_nan = df[i].isnull().sum()
-    # print ('In band values NaN: {}'.format( count_nan))  
-
-    # df.describe().to_csv("avr before mask.csv")
-
-    avg_var = np.ma.masked_equal(avg_var, -1)
-  
-    print(np.shape(avg_var))
-
-    # x_flat = avg_var.reshape(-1,1) # 
-    # df=pd.DataFrame(x_flat) 
-    # count_nan = df[i].isnull().sum()
-    # print ('In band  values NaN: {}'.format( count_nan))  
-
-    # df.describe().to_csv("avr after mask.csv")
-
-
-    # print("---------avg_var out grid---------",np.max(avg_var),np.min(avg_var),"finish max, min")
-    # pprint.pprint(avg_var)
-    
-
-    return (avg_var)
-
-def gridding_variable(variable, map_boundaries, gridSize, allLat, allLon):
-    # check next https://notebook.community/dennissergeev/classcode/notebooks/01_MODIS_L1B#Reproject-MODIS-L1B-data-to-a-regular-grid
-    #https://notebook.community/dennissergeev/classcode/notebooks/01_MODIS_L1B#Scale-factor-and-offset-value
-    n_variables = len(variable)
-    valid_var_grid=np.zeros((n_variables, np.shape(allLat)[0], np.shape(allLat)[1])) #1001, 701)) ### como define it ???
-    print('valid_var_grid', np.shape(valid_var_grid))
-    for i in range(n_variables):
-        valid_var_grid[i] = grid(map_boundaries, gridSize, variable[i].flatten(), allLat.flatten(), allLon.flatten())
-    
-
-    return valid_var_grid 
-
-
-
-
-         
-
-
-                            
-                            
-from netCDF4 import Dataset    # Note: python is case-sensitive!
-import xarray as xr
-import numpy as np
-import argparse
-
-def save_ncfile(name_variable, name_file, array, lat_array, lon_array, bands_array, type_variable):
-
-    
-    try: ncfile.close()  # just to be safe, make sure dataset is not already open.
-    except: pass
-    #ncfile = Dataset('/home/jvillarreal/GRID_DOM3_new.nc',mode='w',format='NETCDF4') 
-    ncfile = Dataset(name_file,mode='w',format='NETCDF4') 
-    #print(ncfile)
-
-    x_dim = ncfile.createDimension('Max_EV_frames:MODIS_SWATH_Type_L1B', array.shape[2])    # longitude axis
-    y_dim = ncfile.createDimension('10*nscans:MODIS_SWATH_Type_L1B', array.shape[1])     # latitude axis
-
-    bands_dim = ncfile.createDimension('bands', np.size(bands_array))    # longitude axis
-
-    ncfile.title='MODIS and simulations'
-    #print(ncfile.title)
-
-    lat = ncfile.createVariable('lat', np.float64, ('10*nscans:MODIS_SWATH_Type_L1B','Max_EV_frames:MODIS_SWATH_Type_L1B'))
-    lat.units = 'degrees_north'
-    lat.standard_name = "latitude"
-    lat.long_name = 'latitude'
-    lat.axis = "Y" 
-
-    lon = ncfile.createVariable('lon', np.float64, ('10*nscans:MODIS_SWATH_Type_L1B','Max_EV_frames:MODIS_SWATH_Type_L1B'))
-    lon.units = 'degrees_east'
-    lon.standard_name = "longitude" 
-    lon.long_name = 'longitude'
-    lon.axis = "X"
-    
-    bands = ncfile.createVariable('bands', np.float64, ('bands'))
-    bands.standard_name = "bands" 
-
-                
-    var= ncfile.createVariable(name_variable, np.float64, ('bands','10*nscans:MODIS_SWATH_Type_L1B','Max_EV_frames:MODIS_SWATH_Type_L1B'))   
-    
-    if (type_variable == 'radiance'):
-        var.units = 'Watts/m^2/micrometer/steradian'  
-    
-    elif (type_variable == 'reflectance'):
-        var.units = 'none or Watts/m^2/micrometer/steradian' 
-
-    lat[:]=lat_array
-    lon[:]=lon_array
-    bands[:]=bands_array
-    var[:]= array
-
-
-    #close the Dataset.
-    ncfile.close(); 
-    print(' ------------------- Dataset was created! ',name_file)
-
-
-
-
 def dataframe_csv(variable, colum, out_file):
+    """
+    Converts a 3D numpy array to a pandas DataFrame and saves its summary statistics to a CSV file.
+
+    Argument:
+    - variable: A 3D numpy array representing an n-dimensional array of data.
+    - colum: A list of strings representing the column names for the resulting DataFrame.
+    - out_file: The name of the output file where the DataFrame summary statistics will be saved.
+
+    Returns:
+    - None.
+    """
   ### input (a,b,c) a will be the columns of the dataframe
   # datafram  row = b*c, colum = a  
     print('dataframe', np.shape(colum), np.shape(variable))
     X_flated = variable.transpose(1,2,0).reshape(-1,variable.shape[0]) # 
-    print(np.shape(X_flated))
+    #print(np.shape(X_flated))
     df=pd.DataFrame(X_flated) 
     for i in range(len(colum)):
         count_nan = df[i].isnull().sum()
@@ -290,8 +186,220 @@ def dataframe_csv(variable, colum, out_file):
     
     print("ok dataframe")
 
-        # convert to Dataframe 
 
+def grid(limit,  gsize_lat, gsize_lon, indata, inlat, inlon):
+    """
+    Returns a gridded dataset of average values, given a set of input data and grid specifications.
+
+    Arguments:
+    - limit (list): A list containing the minimum and maximum values of latitude and longitude, in the form [minlat, maxlat, minlon, maxlon].
+    - gsize_lat (float): The desired grid cell size in the latitude dimension, in decimal degrees.
+    - gsize_lon (float): The desired grid cell size in the longitude dimension, in decimal degrees.
+    - indata (ndarray): The input data to be gridded.
+    - inlat (ndarray): The latitude values corresponding to each element of the input data.
+    - inlon (ndarray): The longitude values corresponding to each element of the input data.
+
+    Returns:
+    - ndarray: A gridded dataset of average values, with dimensions (ydim, xdim), where xdim and ydim are determined by the specified grid cell sizes and latitude/longitude limits.
+    """
+    dx = gsize_lon
+    dy = gsize_lat
+    minlat = float(limit[0])
+    maxlat = float(limit[1])
+    minlon = float(limit[2])
+    maxlon = float(limit[3])
+    xdim = int(1 + ((maxlon - minlon) / dx))  # 589
+    ydim = int(1 + ((maxlat - minlat) / dy))  # 628
+    
+    sum_var  = np.zeros((xdim, ydim))
+    count = np.zeros((xdim, ydim))
+    avg_var = np.empty([xdim, ydim])
+
+    indata[indata < 0] = 0
+
+    #mask_re = np.where(indata != np.nan, 1, 0)  #con 0 tbn funcionaba  indata is a mask ...converting a masked element to nan
+
+
+    for ii in range(len(indata)):
+
+        if (inlat[ii] >= minlat and inlat[ii] <= maxlat and inlon[ii] >= minlon and inlon[ii] <= maxlon):
+
+            i = round((inlon[ii] - minlon) / dx)
+            i = int(i)
+            j = round((inlat[ii] - minlat) / dy)
+            j = int(j)
+            if (indata[ii] != np.nan):
+                sum_var[i, j] = sum_var[i, j] + indata[ii]
+                count[i, j] = count[i, j] +1 
+            # sum_var[i, j] =  indata[ii]
+
+    # print(count)
+    count[count == 0] = np.nan
+
+    #count = np.ma.masked_equal(count, 0)
+
+    avg_var = sum_var/count
+
+
+    #print(avg_var,count)
+    x_flat = np.reshape(avg_var, (avg_var.shape[0]*avg_var.shape[1],-1))
+    df=pd.DataFrame(x_flat) 
+    count_nan = df.isnull().sum()
+    # print ('In band values NaN: {}'.format( count_nan))  
+    # avg_var = np.ma.masked_equal(avg_var, -1)
+  
+    # print("values of zeros in the x", (avg_var <= 0).sum())   #.flatten()
+    # ma.set_fill_value(avg_var,  np.nan)
+    # print ('In band values NaN: 2 {}'.format( count_nan))  
+
+
+    # print(np.shape(avg_var))
+
+
+    return (avg_var).transpose(1,0)
+
+def gridding_variable(variable, map_boundaries, gsize_lat, gsize_lon, allLat, allLon):
+    """
+    Gridded variable values for multiple variables.
+    
+    Arguments:
+    - variable (list): A list of 2D arrays containing variable values to be gridded.
+    - map_boundaries (list): A list containing the lat/lon limits of the region to be gridded.
+            The list should contain the following elements in the order: [minlat, maxlat, minlon, maxlon]
+    - gsize_lat (float): Grid cell size for latitude.
+    - gsize_lon (float): Grid cell size for longitude.
+    - allLat (array): Array containing the latitude values of all the data points.
+    - allLon (array): Array containing the longitude values of all the data points.
+
+    Returns:
+    - valid_var_grid (array): A 3D array containing the gridded values for all variables in the input list.
+     The dimensions are (n_variables, ydim, xdim), where n_variables is the number of variables, ydim is the number of grid cells in the y (latitude) direction, and xdim is the number of grid cells in the x (longitude) direction.
+    """
+    dx = gsize_lon
+    dy = gsize_lat
+    minlat = float(map_boundaries[0])
+    maxlat = float(map_boundaries[1])
+    minlon = float(map_boundaries[2])
+    maxlon = float(map_boundaries[3])
+    xdim = int(1 + ((maxlon - minlon) / dx))  # 589
+    ydim = int(1 + ((maxlat - minlat) / dy))  # 628
+    
+    # check next https://notebook.community/dennissergeev/classcode/notebooks/01_MODIS_L1B#Reproject-MODIS-L1B-data-to-a-regular-grid
+    #https://notebook.community/dennissergeev/classcode/notebooks/01_MODIS_L1B#Scale-factor-and-offset-value
+    n_variables = len(variable)
+    valid_var_grid=np.empty((n_variables, ydim, xdim)) # 628, 589#np.shape(allLat)[0] =lon, np.shape(allLat)[1]=lat)) #1001, 701)) ### como define it ???
+    # print('valid_var_grid', np.shape(valid_var_grid))
+    for i in range(n_variables):
+        valid_var_grid[i] = grid(map_boundaries,  gsize_lat, gsize_lon, variable[i].flatten(), allLat.flatten(), allLon.flatten())
+    
+        # print("obtained gridded var {}, shape {}".format(i, np.shape(valid_var_grid[i])))
+        #print("3 values of zeros in the x", (valid_var_grid[i] <= 0).sum())   #.flatten()
+        # print("values of nan {}, i {}".format(i, np.isnan(valid_var_grid[i]).sum()))
+
+    return valid_var_grid 
+
+    
+
+def save_ncfile(name_file, lat_array, lon_array, rad_var, refl_var, bands_array): #type_variable
+    """
+    Creates a NetCDF4 file and saves the provided latitude, longitude, radiance, and reflectance variables as variables
+    in the file.
+
+    Arguments:
+    - name_file (str): The name of the NetCDF4 file to create.
+    - lat_array (ndarray): A 1D numpy array containing latitude values.
+    - lon_array (ndarray): A 1D numpy array containing longitude values.
+    - rad_var (ndarray): A 3D numpy array containing radiance values for each band at each grid cell. The radiance variable, with dimensions (chan, lat, lon).
+    - refl_var (ndarray): A 3D numpy array containing reflectance values for each band at each grid cell. The reflectance variable, with dimensions (chan, lat, lon).
+
+    - bands_array (ndarray): A 1D numpy array containing band values.
+
+    Returns:
+    - None
+    - Creation of a netcdf file with MODIS information on the Germany area ref_total and rad_total are the 2 variables in this file.
+    """
+    
+    try: ncfile.close()  # just to be safe, make sure dataset is not already open.
+    except: pass
+    #ncfile = Dataset('/home/jvillarreal/GRID_DOM3_new.nc',mode='w',format='NETCDF4') 
+    ncfile = Dataset(name_file,mode='w',format='NETCDF4') 
+    #print(ncfile)
+
+    x_dim = ncfile.createDimension('lon', rad_var.shape[2])    # longitude axis
+    y_dim = ncfile.createDimension('lat', rad_var.shape[1])     # latitude axis
+
+    bands_dim = ncfile.createDimension('chan', np.size(bands_array))    # longitude axis
+
+    ncfile.title='Germany MODIS'
+    #print(ncfile.title)
+    # nlon=589
+    # nlat=628
+    # ncout.createDimension('lat',nlat)
+    # ncout.createDimension('lon',nlon)
+    # lat_o=ncout.createVariable('lat',np.float32,('lon','lat'))
+    # lon_o=ncout.createVariable('lon',np.float32,('lon','lat'))
+
+
+    lat = ncfile.createVariable('lat', np.float64, ('lat'))
+    lat.units = 'degrees_north'
+    lat.standard_name = "latitude"
+    lat.long_name = 'latitude'
+    lat.axis = "Y" 
+
+    lon = ncfile.createVariable('lon', np.float64, ('lon'))
+    lon.units = 'degrees_east'
+    lon.standard_name = "longitude" 
+    lon.long_name = 'longitude'
+    lon.axis = "X"
+    
+    bands = ncfile.createVariable('chan', np.float64, ('chan'))
+    bands.standard_name = "channels" 
+
+                
+    var= ncfile.createVariable("ref_total", np.float64, ('chan','lat','lon'))  
+        
+    var2= ncfile.createVariable("rad_total", np.float64, ('chan','lat','lon'))  
+
+    #units_str = ' '.join(units_names)
+    var.units = 'none' 
+    var2.units = 'W/m^2/um/sr' 
+    
+#     if (type_variable == 'radiance'):
+#         var.units = 'Watts/m^2/micrometer/steradian'  
+    
+#     elif (type_variable == 'reflectance'):
+#         var.units = 'none or Watts/m^2/micrometer/steradian' 
+
+    lat[:]=lat_array
+    lon[:]=lon_array
+    bands[:]=bands_array
+    
+    var[:]= refl_var
+    var2[:]= rad_var
+
+    #dataframe_csv(variable = array, colum =range(np.shape(array)[0]), out_file = name_file)
+
+    #close the Dataset.
+    ncfile.close(); 
+    print(' ------------------- Dataset was created! ',name_file)
+
+
+
+#####################################################
+
+def read_units(file_i, var_name, type_units):
+
+    var = file_i.select(var_name)
+
+    # Get the units attribute
+    units_var = var.attributes()['{}_units'.format(type_units)]
+    size_var = len(var.attributes()['{}_scales'.format(type_units)])
+    #print(units_var)
+    units_list = [units_var] * size_var
+
+    return units_list 
+
+########################################
 
 from matplotlib.pyplot import figure 
 
@@ -445,11 +553,11 @@ def plot_rgb_image(along_track, cross_trak, z, out_file, name_plot, lat, lon):
         myd03_Latitude_data = np.fliplr(lat) # https://moonbooks.org/Jupyter/plot_rgb_image_from_modis_myd021km_products/
         myd03_Longitude_data = np.fliplr(lon)
         myd03_Latitude_shape = myd03_Latitude_data.shape
-        print('=====lat shape before', lat.shape)
-        print('=====lat shape after', myd03_Latitude_shape)
+        #print('=====lat shape before', lat.shape)
+        #print('=====lat shape after', myd03_Latitude_shape)
         z = z_color_enh / 256.0
         z = np.fliplr(z)
-        print('=====z rgb max', np.max(z)  )
+        #print('=====z rgb max', np.max(z)  )
 
         myd03_Latitude = lat
         myd03_Longitude = lon
@@ -743,13 +851,13 @@ def save_data(name_variable, name_file, array, lat, lon, bands):
     filehdf.end()            
                             
                             
-from mpl_toolkits.basemap import Basemap
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib as mpl
-from matplotlib.colors import LinearSegmentedColormap
-import numpy as np
-from matplotlib.ticker import MaxNLocator
+# from mpl_toolkits.basemap import Basemap
+# import matplotlib.pyplot as plt
+# import matplotlib.cm as cm
+# import matplotlib as mpl
+# from matplotlib.colors import LinearSegmentedColormap
+# import numpy as np
+# from matplotlib.ticker import MaxNLocator
 
 def visulize_sat(variable, bands, lat, lon, cbar_label,
              figure_name, map_limit):
@@ -868,4 +976,5 @@ def visulize_sat(variable, bands, lat, lon, cbar_label,
     fig.savefig("{} in bands {}.png".format(figure_name, bands)) 
     plt.close()                               
 ########################################## End ot used ####################################
+
 

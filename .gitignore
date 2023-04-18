@@ -1,5 +1,7 @@
 **.ipynb_checkpoints*
 **code_test/__pycache__/
+**MODIS_LEVEL1_ICON/__pycache__/
+**MODIS_LEVEL1_ICON/logs/
 **code_test/core*
 
 
