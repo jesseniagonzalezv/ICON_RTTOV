@@ -10,8 +10,8 @@ It will generate a netcdf file
 - create_icon_input.sh
 - It will generate a netcdf with the variables: "tas", "t_s", "ps", "huss", "u_10m", "v_10m", "topography_c", "FR_LAND", "pres", "ta", "hus",  "clc", "clw", "cli", "Reff", "lwp", "Nd_max"
 
-'''
+```
   $ bash create_icon_input.sh
   $ bash create_lwp_Nd_Reff.sh  
-'''
+```
 
