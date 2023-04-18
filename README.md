@@ -1,4 +1,20 @@
-# ICON_RTTOV
+# Creation of the netcdf file for the MODIS Level 1B in the area of Germany
+ Check folder MODIS_LEVEL1_ICON. It has code to create the netcdf file and then compare it with the simulations obtained with the ICON
+
+'''
+  $ python modis_l1b_read_plot.py --path-dataset "/work/bb1036/b381362/dataset" --path-output "/work/bb1036/b381362/output" --task "spectral"
+'''
+
+
+# Creation of the variables needed to run RTTOV using ICON-LES simulations
+Check folder ICON_LES
+
+'''
+  $ bash create_icon_input.sh
+  $ bash create_lwp_Nd_Reff.sh
+'''
+
+# Creation of the spectral bands with ICON and RTTOV
 
 
 ML_RTTOV: to adapt the dataset and call rttov121
