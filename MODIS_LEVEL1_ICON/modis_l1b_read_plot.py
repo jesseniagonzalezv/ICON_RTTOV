@@ -11,9 +11,8 @@ import pandas as pd
 import xarray as xr
 
 
-from modis_functions import dataset_dic,grid_coordinate, grid, gridding_variable, read_bands, read_coordinate, read_level1_array, visulize_sat, save_data, dataframe_csv,save_ncfile, rgb_image, plot_rgb_image, read_units
-
-#%matplotlib inline
+from modis_functions import dataset_dic, grid_coordinate, grid, gridding_variable, read_bands, read_coordinate, read_level1_array, dataframe_csv, save_ncfile, read_units, plot_rgb_MODIS
+#plot_rgb_image, visulize_sat
 
 def get_spectral(data_file, path_dataset, map_boundaries, gridSize_lat, gridSize_lon, allLat, allLon, file_data, list_variable_name, band_list, MODIS_dataset_output, MODIS_dataset_output_germany, MODIS_bands_output, type_data):
     """
@@ -118,13 +117,15 @@ def main():
     gridSize_lat=0.011 # 1 grado = 100 km => 0.01 grados = 1 km
     
     print(" ********** MODIS level1B data **********")
-    file_data = SD(os.sep.join([path_dataset,data_file]), SDC.READ)
-    dataset_dic(file_data)
+    file_path = os.sep.join([path_dataset,data_file])
+    file_data = SD(file_path, SDC.READ)
+    #dataset_dic(file_data)
       
     #set the modis file L1 & geo
     print(" ********** Geolocation file **********")
-    file_geo = SD(os.sep.join([path_dataset,geolocation_file]), SDC.READ)
-    dataset_dic(file_geo)
+    geo_path = os.sep.join([path_dataset,geolocation_file])
+    file_geo = SD(geo_path, SDC.READ)
+    #dataset_dic(file_geo)
         
 
     allLat, allLon = read_coordinate(file_geo)
@@ -233,8 +234,8 @@ def main():
 
         
 
-    elif task == "get_RGB":
-        reflectance_rgb = rgb_image(out_file = path_output, myd021km_file = file_data, lat = allLat, lon = allLon) #reflectance_rgb 2030,1354,3  x,y,ch
+    elif task == "RGB":
+        plot_rgb_MODIS(myd021_filepath=file_path, myd03_filepath=geo_path, outpath=path_output)
         
 #         rgb_germany = np.empty((1,np.shape(gr_lat)[0],np.shape(gr_lat)[1]))
         
