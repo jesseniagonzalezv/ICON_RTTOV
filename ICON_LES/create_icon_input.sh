@@ -27,7 +27,7 @@ path_data_out=/work/bb1036/rttov_share/dataset_ICON
 # other variables 3D by level (heigh 150)
 ##############################################################################################################################
 
-for hr in 09 #13 08 10 11 12 14 15 16 17 18 19 20 
+for hr in 08 #08 09 10 11 12 13 14 15 16 17 18 19 20 
 
 do
    date >> create_icon.log
