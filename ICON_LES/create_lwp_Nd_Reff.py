@@ -95,7 +95,7 @@ def get_lwp_Nd(path_icon):
     # print('===============cdnc_2013_cm (height 120, lat 57, lon 227) 15.5508091629487 == ', ds.Nd[119, 56 - 9, 226])
     # print('===============Reff (height 120, lat 57, lon 227) 17.20 um == ', ds.Reff[119, 56 - 9, 226])
 
-    print("Reff min, max", reff_2013.min(), np.max(reff_2013))
+    print("Reff min, max", reff_2013.min().values, np.max(reff_2013).values)
 
     variable_2D = ["tas", "t_s", "ps", "huss", "u_10m", "v_10m", "topography_c", "FR_LAND"]
 
@@ -119,8 +119,11 @@ def main():
     arg = parser.add_argument
 
     arg('--path-in', type=str, default='/work/bb1036/rttov_share/dataset_ICON/icon_input_germany_02052013_T13.nc', help='path of the netcdf with the ICON_LES simulations')
+
+    args = parser.parse_args()
+    path_in = args.path_in
     
-        
+    get_lwp_Nd(path_in)
 
 if __name__ == '__main__':
     main()

@@ -1,12 +1,14 @@
 #!/bin/bash
 
 
+# --------------------------------------------------------------------------------------------
 
-#path data
-main_path=/work/bb1036/rttov_share/dataset_ICON
-
-
+# create new variables and then only keep the ones that matter for the machine learning
+# --------------------------------------------------------------------------------------------
 module load python3
+
+
+main_path=/work/bb1036/rttov_share/dataset_ICON
 
 for hr in 08 #09 10 11 12 13 14 15 16 17 18 19 20 
 
