@@ -4,7 +4,7 @@
 #SBATCH --partition=compute
 #SBATCH --account=bb1036
 #SBATCH --nodes=1
-#SBATCH --time=02:00:00
+#SBATCH --time=07:00:00
 #SBATCH --job-name=testing
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=jessenia.gv@gmail.com # Email address for notifications
@@ -293,12 +293,12 @@ do
 
    #Cutting the bottom part of the domain (NaN values)
    #Whole domain
-   ncks -h -d lat,47.599,54.5 $path_data_out/icon_input_germany_T${hr}_no_time_dim_no_history.nc \
-   $path_data_out/icon_input_germany_02052013_T${hr}.nc
+ #  ncks -h -d lat,47.599,54.5 $path_data_out/icon_input_germany_T${hr}_no_time_dim_no_history.nc \
+  # $path_data_out/icon_input_germany_02052013_T${hr}.nc
    
    ########## T16 
-   # ncks -h -d lat,47.61,54.5 $path_data_out/icon_input_germany_T${hr}_no_time_dim_no_history.nc \
-   # $path_data_out/icon_input_germany_02052013_T${hr}.nc
+    ncks -h -d lat,47.61,54.5 $path_data_out/icon_input_germany_T${hr}_no_time_dim_no_history.nc \
+    $path_data_out/icon_germany_02052013_T${hr}.nc
    
    ##########
    
